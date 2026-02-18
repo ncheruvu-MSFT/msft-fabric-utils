@@ -14,12 +14,24 @@ Each notebook has a **Configuration** cell near the top. Common settings:
 
 | Setting | Description |
 |---------|-------------|
-| `TARGET_WORKSPACE_ID` | Set to a specific workspace GUID, or `None` to use the current workspace |
+| `TARGET_WORKSPACE_ID` | Set to a specific workspace ID, or `None` to use the current workspace |
 | `DRY_RUN` | Set to `True` to preview changes without applying (default) |
 
 ## Authentication
 
 All notebooks use **Fabric-native authentication** via `mssparkutils.credentials.getToken()`. No manual credential setup is required when running inside a Fabric workspace.
+
+## Data Sizes
+
+The notebook collects **row counts only** via SQL Endpoint DMVs. For actual **OneLake storage sizes** (data on disk), use the PowerShell script:
+
+```
+scripts/powershell/Get-FabricTableSizes.ps1
+```
+
+> **Status:** Coming Soon — the PowerShell script is under testing.
+
+See [Get the size of OneLake items](https://learn.microsoft.com/en-us/fabric/onelake/how-to-get-item-size) for details on the underlying Azure Storage commands.
 
 ## Troubleshooting
 
@@ -27,5 +39,5 @@ All notebooks use **Fabric-native authentication** via `mssparkutils.credentials
 |-------|----------|
 | `ModuleNotFoundError: sempy` | Ensure you're running inside a Fabric notebook, not a local Jupyter environment |
 | `403 Forbidden` on REST API calls | Verify you have Admin or Member role on the target workspace |
-| `dm_db_partition_stats not available` | The notebook will automatically fall back to `sys.partitions` (row counts only, no size info) |
+| `dm_db_partition_stats not available` | The notebook will automatically fall back to `sys.partitions` (row counts only) |
 | SQL endpoint connection timeout | Ensure the Warehouse/Lakehouse SQL endpoint is active and accessible |

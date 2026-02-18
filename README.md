@@ -10,7 +10,8 @@ A community-driven collection of open-source notebooks, scripts, and utilities f
 
 | Asset | Folder | Description |
 |-------|--------|-------------|
-| **Warehouse & Lakehouse Metrics** | `notebooks/` | Fabric notebook that discovers all Warehouses and Lakehouses in a workspace, collects table-level row counts, size on disk, and maintenance settings via SQL Endpoint DMVs and the Fabric REST API. Includes consolidated reporting, maintenance configuration management, and CSV export. |
+| **Warehouse & Lakehouse Metrics** | `notebooks/` | Fabric notebook that discovers all Warehouses and Lakehouses in a workspace, collects table-level row counts and maintenance settings via SQL Endpoint DMVs and the Fabric REST API. Includes consolidated reporting, maintenance configuration management, and CSV export. |
+| **OneLake Table Sizes** *(Coming Soon)* | `scripts/powershell/` | PowerShell script that lists tables and their actual OneLake storage sizes for a given Lakehouse or Warehouse. Uses Azure Storage commands against OneLake. |
 
 ## 🚀 Getting Started
 
@@ -28,7 +29,7 @@ A community-driven collection of open-source notebooks, scripts, and utilities f
 1. **Clone** this repository
 
    ```bash
-   git clone https://github.com/<org>/msft-fabric-utils.git
+   git clone https://github.com/ncheruvu-MSFT/msft-fabric-utils.git
    ```
 
 2. **Import** the desired notebook into your Fabric workspace
@@ -62,11 +63,22 @@ msft-fabric-utils/
 | Capability | Description |
 |------------|-------------|
 | **Item Discovery** | Enumerate all Warehouses and Lakehouses in a workspace via Fabric REST API |
-| **Table Metrics Collection** | Row counts, reserved size, used size via SQL Endpoint DMVs (`sys.dm_db_partition_stats`, `sys.partitions`) |
+| **Table Row Counts** | Row counts via SQL Endpoint DMVs (`sys.dm_db_partition_stats`, `sys.partitions`) |
 | **Maintenance Settings** | Read and configure V-Order, file compaction, and unreferenced file retention for Lakehouses |
 | **Maintenance Management** | Preview and apply maintenance configuration changes with dry-run support |
-| **Consolidated Reporting** | Merged view of metrics + maintenance settings with summary aggregations |
+| **Consolidated Reporting** | Merged view of row counts + maintenance settings with summary aggregations |
 | **CSV Export** | Export full metrics report with timestamps for auditing and sharing |
+
+### OneLake Table Sizes – PowerShell *(Coming Soon)*
+
+| Capability | Description |
+|------------|-------------|
+| **Table Discovery** | List all tables under a Lakehouse or Warehouse in OneLake |
+| **Actual File Sizes** | Recursively calculate real Delta/Parquet file sizes per table |
+| **CSV Export** | Export table size report with file counts |
+| **Prerequisites** | Auto-installs `Az.Accounts` and `Az.Storage` modules; prompts for Azure login |
+
+> **Reference:** [Get the size of OneLake items](https://learn.microsoft.com/en-us/fabric/onelake/how-to-get-item-size)
 
 ### Table Maintenance in Microsoft Fabric
 
@@ -84,10 +96,10 @@ msft-fabric-utils/
 |-----|---------|
 | `sys.tables` | Table metadata (name, create/modify dates) |
 | `sys.schemas` | Schema names |
-| `sys.dm_db_partition_stats` | Row counts and page-level size metrics (primary) |
+| `sys.dm_db_partition_stats` | Row counts (primary) |
 | `sys.partitions` | Row counts fallback (if `dm_db_partition_stats` unavailable) |
 
-> **Note:** `sys.dm_pdw_nodes_db_partition_stats` is a Synapse dedicated pool DMV and does **not** exist in Fabric SQL endpoints.
+> **Note:** `sys.dm_pdw_nodes_db_partition_stats` is a Synapse dedicated pool DMV and does **not** exist in Fabric SQL endpoints. Data sizes from DMVs do not reflect actual OneLake file sizes — use the PowerShell script for accurate storage measurement.
 
 ### Fabric-Native Libraries Used
 
@@ -96,7 +108,6 @@ msft-fabric-utils/
 | `sempy.fabric` | Workspace context and item discovery |
 | `mssparkutils.credentials` | Automatic Entra ID token acquisition |
 | `spark.read.format("jdbc")` | Spark JDBC connector for SQL endpoint queries |
-| `notebookutils.mssparkutils` | File system operations |
 
 ## 🤝 Contributing
 
