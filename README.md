@@ -11,6 +11,8 @@ A community-driven collection of open-source notebooks, scripts, and utilities f
 | Asset | Folder | Description |
 |-------|--------|-------------|
 | **Warehouse & Lakehouse Metrics** | `notebooks/` | Fabric notebook that discovers all Warehouses and Lakehouses in a workspace, collects table-level row counts and maintenance settings via SQL Endpoint DMVs and the Fabric REST API. Includes consolidated reporting, maintenance configuration management, and CSV export. |
+| **Notebook & Pipeline Efficiency** | `notebooks/` | Fabric notebook that analyzes execution efficiency for all Notebooks and Data Pipelines in a workspace. Collects run history, calculates success rates, duration trends (avg/P50/P95), failure analysis, health dashboard, and scheduling patterns via the Fabric REST API. |
+| **Warehouse Performance & Soft Delete** | `notebooks/` | Fabric notebook combining warehouse performance diagnostics (cold cache, long-running queries, statistics freshness, schema optimization, lock monitoring, compaction health, V-Order) with OneLake soft-deleted file scanning and recovery guidance. |
 | **OneLake Table Sizes** *(Coming Soon)* | `scripts/powershell/` | PowerShell script that lists tables and their actual OneLake storage sizes for a given Lakehouse or Warehouse. Uses Azure Storage commands against OneLake. |
 
 ## 🚀 Getting Started
@@ -42,7 +44,9 @@ A community-driven collection of open-source notebooks, scripts, and utilities f
 ```
 msft-fabric-utils/
 ├── notebooks/
-│   └── fabric-warehouse-lakehouse-metrics.ipynb   # Warehouse & Lakehouse metrics + maintenance
+│   ├── fabric-warehouse-lakehouse-metrics.ipynb   # Warehouse & Lakehouse metrics + maintenance
+│   ├── fabric-notebook-pipeline-efficiency.ipynb  # Notebook & Pipeline execution efficiency
+│   └── fabric-warehouse-performance-softdelete.ipynb  # Warehouse perf & OneLake soft delete
 ├── scripts/
 │   ├── powershell/                                # PowerShell automation scripts
 │   └── python/                                    # Python utility scripts
@@ -68,6 +72,42 @@ msft-fabric-utils/
 | **Maintenance Management** | Preview and apply maintenance configuration changes with dry-run support |
 | **Consolidated Reporting** | Merged view of row counts + maintenance settings with summary aggregations |
 | **CSV Export** | Export full metrics report with timestamps for auditing and sharing |
+
+### Notebook & Pipeline Efficiency Notebook
+
+| Capability | Description |
+|------------|-------------|
+| **Item Discovery** | Enumerate all Notebooks and Data Pipelines in a workspace via Fabric REST API |
+| **Run History** | Fetch job instances (executions) with start/end times, status, and failure reasons |
+| **Success Rate Analysis** | Per-item success/failure counts and success rate percentage |
+| **Duration Statistics** | Average, median (P50), 95th percentile (P95), min/max execution times |
+| **Health Dashboard** | Color-coded health status (Healthy / Warning / Critical) based on success rate |
+| **Failure Analysis** | Top failing items, most common failure reasons, recent failure timeline |
+| **Duration Trends** | Weekly aggregation showing performance trends (improving / degrading / stable) |
+| **Scheduling Analysis** | Invocation method distribution (manual / scheduled) and execution frequency |
+| **Spark Resource Efficiency** | Per-notebook Spark efficiency % — tries Spark Applications API, falls back to compute efficiency proxy |
+| **Recommendations** | Automated suggestions for items that need attention |
+| **CSV Export** | Export efficiency summary, run history, and Spark efficiency with timestamps |
+
+### Warehouse Performance & OneLake Soft Delete Notebook
+
+| Capability | Description |
+|------------|-------------|
+| **Warehouse Discovery** | Enumerate all Warehouses and Lakehouses in a workspace via Fabric REST API |
+| **Cold Cache Detection** | Identify queries hitting remote storage instead of cache via `queryinsights.exec_requests_history` |
+| **Long-Running Queries** | Surface slow query patterns from `queryinsights.long_running_queries` |
+| **Frequently Run Queries** | Find most-executed queries (optimization candidates) from `queryinsights.frequently_run_queries` |
+| **Statistics Freshness** | Detect stale statistics that may degrade query plan quality (`sys.stats` + `dm_db_stats_properties`) |
+| **Schema & Data Type Audit** | Flag oversized `varchar` columns, inefficient `decimal(18,0)`, excessive nullable columns |
+| **Lock & Transaction Monitoring** | Active locks and blocking detection via `sys.dm_tran_locks` |
+| **Table Compaction Health** | Small/fragmented row groups per table via `sys.dm_db_partition_stats` |
+| **V-Order & Maintenance Status** | V-Order and compaction configuration per Warehouse/Lakehouse |
+| **OneLake Soft-Deleted Files** | Scan for soft-deleted files using Azure Data Lake Storage SDK |
+| **Soft Delete Recovery Guide** | Recovery instructions via Storage Explorer, PowerShell, and REST API |
+| **Consolidated Summary** | Prioritized recommendations covering performance and data protection |
+| **CSV Export** | Export all reports with timestamps for auditing |
+
+> **References:** [Warehouse Performance Guidelines](https://learn.microsoft.com/en-us/fabric/data-warehouse/guidelines-warehouse-performance) · [OneLake Soft Delete](https://learn.microsoft.com/en-us/fabric/onelake/onelake-disaster-recovery#soft-delete-for-onelake-files)
 
 ### OneLake Table Sizes – PowerShell *(Coming Soon)*
 
@@ -133,3 +173,6 @@ This repository is **not an official Microsoft product**. It is a community-driv
 - [Fabric REST API Reference](https://learn.microsoft.com/en-us/rest/api/fabric/)
 - [Lakehouse Table Maintenance](https://learn.microsoft.com/en-us/fabric/data-engineering/lakehouse-table-maintenance)
 - [Fabric Warehouse Overview](https://learn.microsoft.com/en-us/fabric/data-warehouse/data-warehousing)
+- [Warehouse Performance Guidelines](https://learn.microsoft.com/en-us/fabric/data-warehouse/guidelines-warehouse-performance)
+- [OneLake Disaster Recovery & Soft Delete](https://learn.microsoft.com/en-us/fabric/onelake/onelake-disaster-recovery)
+- [Recover Soft-Deleted Files](https://learn.microsoft.com/en-us/fabric/onelake/soft-delete)
