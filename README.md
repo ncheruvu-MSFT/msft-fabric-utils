@@ -13,6 +13,8 @@ A community-driven collection of open-source notebooks, scripts, and utilities f
 | **Warehouse & Lakehouse Metrics** | `notebooks/` | Fabric notebook that discovers all Warehouses and Lakehouses in a workspace, collects table-level row counts and maintenance settings via SQL Endpoint DMVs and the Fabric REST API. Includes consolidated reporting, maintenance configuration management, and CSV export. |
 | **Notebook & Pipeline Efficiency** | `notebooks/` | Fabric notebook that analyzes execution efficiency for all Notebooks and Data Pipelines in a workspace. Collects run history, calculates success rates, duration trends (avg/P50/P95), failure analysis, health dashboard, and scheduling patterns via the Fabric REST API. |
 | **Warehouse Performance & Soft Delete** | `notebooks/` | Fabric notebook combining warehouse performance diagnostics (cold cache, long-running queries, statistics freshness, schema optimization, lock monitoring, compaction health, V-Order) with OneLake soft-deleted file scanning and recovery guidance. |
+| **Capacity Migration Inventory** | `fabric-region-migration/` | Fabric notebook that auto-discovers all capacities, workspaces, and items tenant-wide via Admin APIs. Classifies each item as movable vs non-movable for cross-region capacity migration, calculates workspace complexity, assigns migration waves, and exports CSV inventory. |
+| **Migration Tracker Generator** | `fabric-region-migration/` | Python script that generates a multi-sheet Excel workbook for tracking a Fabric capacity migration (phases, risk register, RACI matrix, issue tracker, validation checklist). |
 | **OneLake Table Sizes** *(Coming Soon)* | `scripts/powershell/` | PowerShell script that lists tables and their actual OneLake storage sizes for a given Lakehouse or Warehouse. Uses Azure Storage commands against OneLake. |
 
 ## 🚀 Getting Started
@@ -44,12 +46,15 @@ A community-driven collection of open-source notebooks, scripts, and utilities f
 ```
 msft-fabric-utils/
 ├── notebooks/
-│   ├── fabric-warehouse-lakehouse-metrics.ipynb   # Warehouse & Lakehouse metrics + maintenance
-│   ├── fabric-notebook-pipeline-efficiency.ipynb  # Notebook & Pipeline execution efficiency
-│   └── fabric-warehouse-performance-softdelete.ipynb  # Warehouse perf & OneLake soft delete
+│   ├── fabric-warehouse-lakehouse-metrics.ipynb        # Warehouse & Lakehouse metrics + maintenance
+│   ├── fabric-notebook-pipeline-efficiency.ipynb       # Notebook & Pipeline execution efficiency
+│   └── fabric-warehouse-performance-softdelete.ipynb   # Warehouse perf & OneLake soft delete
+├── fabric-region-migration/
+│   ├── fabric-capacity-migration-inventory.ipynb       # Cross-region migration inventory & planning
+│   └── generate_migration_tracker_excel.py             # Excel migration tracker generator
 ├── scripts/
-│   ├── powershell/                                # PowerShell automation scripts
-│   └── python/                                    # Python utility scripts
+│   ├── powershell/                                     # PowerShell automation scripts
+│   └── python/                                         # Python utility scripts
 ├── docs/
 │   └── getting-started.md                         # Additional documentation
 ├── .gitignore
@@ -108,6 +113,40 @@ msft-fabric-utils/
 | **CSV Export** | Export all reports with timestamps for auditing |
 
 > **References:** [Warehouse Performance Guidelines](https://learn.microsoft.com/en-us/fabric/data-warehouse/guidelines-warehouse-performance) · [OneLake Soft Delete](https://learn.microsoft.com/en-us/fabric/onelake/onelake-disaster-recovery#soft-delete-for-onelake-files)
+
+### Capacity Migration Inventory Notebook
+
+| Capability | Description |
+|------------|-------------|
+| **Capacity Discovery** | Enumerate all Fabric capacities with region, SKU, and state via `GET /v1/capacities` |
+| **Workspace Discovery** | List all workspaces per capacity via Admin API `GET /v1/admin/workspaces` |
+| **Item Enumeration** | List all items tenant-wide via Admin API `GET /v1/admin/items` with pagination |
+| **Movability Classification** | Classify each item as ✅ Movable or ❌ Non-Movable per [MS Learn capacity reassignment restrictions](https://learn.microsoft.com/en-us/fabric/admin/portal-workspace-capacity-reassignment) |
+| **Migration Complexity** | Assess Low / Medium / High complexity per workspace based on item composition |
+| **Wave Assignment** | Auto-assign migration waves (Wave 1 = movable-only, Wave 2 = data copy, Wave 3 = recreate) |
+| **Phased Plan** | Auto-generated 6-phase migration plan (Discovery → Setup → Wave 1–3 → Cutover) |
+| **Constraints Reminder** | Surface key constraints: jobs cancelled, staging items, Private Link, large-storage models |
+| **CSV Export** | Export capacities, workspace summary, and item detail CSVs for the Excel tracker |
+| **Retry / Backoff** | Built-in `fabric_api_get()` helper with exponential backoff for HTTP 429 rate limits |
+
+> **References:** [Capacity Reassignment Restrictions](https://learn.microsoft.com/en-us/fabric/admin/portal-workspace-capacity-reassignment) · [Multi-Geo Support](https://learn.microsoft.com/en-us/fabric/admin/service-admin-premium-multi-geo) · [Admin Items API](https://learn.microsoft.com/en-us/rest/api/fabric/admin/items/list-items) · [Find Your Fabric Home Region](https://learn.microsoft.com/en-us/fabric/admin/find-fabric-home-region)
+
+### Migration Tracker Excel Generator
+
+| Sheet | Description |
+|-------|-------------|
+| **Migration Inventory** | Template for capacity/workspace/item data (populate from notebook CSV exports) |
+| **Migration Phases** | 6-phase plan with milestones, owners, planned/actual dates, status, % complete |
+| **Risk Register** | 10 pre-populated migration risks with likelihood, impact, and mitigation strategies |
+| **RACI Matrix** | Responsibility assignment for 17 migration tasks across 7 roles (color-coded) |
+| **Issue Tracker** | Log for tracking migration issues with severity, status, and resolution |
+| **Validation Checklist** | Post-migration validation steps per wave (data integrity, connectivity, performance) |
+
+```bash
+# Generate the Excel tracker
+pip install openpyxl
+python fabric-region-migration/generate_migration_tracker_excel.py
+```
 
 ### OneLake Table Sizes – PowerShell *(Coming Soon)*
 
@@ -176,3 +215,8 @@ This repository is **not an official Microsoft product**. It is a community-driv
 - [Warehouse Performance Guidelines](https://learn.microsoft.com/en-us/fabric/data-warehouse/guidelines-warehouse-performance)
 - [OneLake Disaster Recovery & Soft Delete](https://learn.microsoft.com/en-us/fabric/onelake/onelake-disaster-recovery)
 - [Recover Soft-Deleted Files](https://learn.microsoft.com/en-us/fabric/onelake/soft-delete)
+- [Capacity Reassignment Restrictions](https://learn.microsoft.com/en-us/fabric/admin/portal-workspace-capacity-reassignment)
+- [Multi-Geo Support for Fabric](https://learn.microsoft.com/en-us/fabric/admin/service-admin-premium-multi-geo)
+- [Find Your Fabric Home Region](https://learn.microsoft.com/en-us/fabric/admin/find-fabric-home-region)
+- [Admin Items API](https://learn.microsoft.com/en-us/rest/api/fabric/admin/items/list-items)
+- [Admin Workspaces API](https://learn.microsoft.com/en-us/rest/api/fabric/admin/workspaces/list-workspaces)
