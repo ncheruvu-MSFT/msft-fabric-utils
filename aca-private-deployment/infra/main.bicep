@@ -1,19 +1,17 @@
 // ============================================================================
-// Phase 1: Azure Container Apps – VNet, Environment & Hello-World App
+// Phase 1: Azure Container Apps – Environment & Hello-World App
 // ============================================================================
 // Deploys:
-//   1. Virtual Network with subnets (or uses existing ones)
-//   2. Log Analytics workspace (required by ACA environment)
-//   3. Azure Container Apps Environment (internal-only, VNet-injected)
-//   4. Hello-World container app
+//   1. Log Analytics workspace (required by ACA environment)
+//   2. Azure Container Apps Environment (internal-only, VNet-injected)
+//   3. Hello-World container app
 //
-// Supports two modes:
-//   - Create new VNet/subnets: leave existingVnet* params empty (default)
-//   - Use existing VNet/subnets: provide resource IDs via existingVnet* params
+// Prerequisites (must exist BEFORE deployment):
+//   - VNet with an ACA infrastructure subnet (/23 min, delegated to
+//     Microsoft.App/environments)
+//   - PE subnet (can be in a different VNet/subscription/resource group)
 //
-// Phase 2 (private-dns.bicep) creates the Private DNS Zone & Private Endpoint
-// using the runtime-generated default domain from this deployment's outputs.
-//
+// Phase 2 (private-dns.bicep) creates the Private DNS Zone & Private Endpoint.
 // Public network access is disabled via CLI after deployment (see deploy.ps1).
 // ============================================================================
 
@@ -30,25 +28,8 @@ param location string = resourceGroup().location
 @maxLength(20)
 param baseName string = 'acaprivate'
 
-// ── Existing VNet/Subnet parameters (leave empty to create new ones) ──────
-@description('Resource ID of an existing VNet. Leave empty to create a new VNet.')
-param existingVnetId string = ''
-
-@description('Resource ID of an existing subnet for ACA infrastructure (must have Microsoft.App/environments delegation, /23 minimum). Required when existingVnetId is provided.')
-param existingAcaSubnetId string = ''
-
-@description('Resource ID of an existing subnet for private endpoints (privateEndpointNetworkPolicies should be Disabled). Required when existingVnetId is provided.')
-param existingPeSubnetId string = ''
-
-// ── New VNet parameters (used only when existingVnetId is empty) ───────────
-@description('Address space for the new VNet (ignored if using existing VNet)')
-param vnetAddressPrefix string = '10.100.0.0/16'
-
-@description('Subnet CIDR for ACA infrastructure (ignored if using existing VNet)')
-param acaSubnetPrefix string = '10.100.0.0/23'
-
-@description('Subnet CIDR for private endpoints (ignored if using existing VNet)')
-param peSubnetPrefix string = '10.100.2.0/24'
+@description('Resource ID of the subnet for ACA infrastructure (must have Microsoft.App/environments delegation, /23 minimum). Must already exist.')
+param acaSubnetId string
 
 @description('Container image to deploy (hello-world)')
 param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
@@ -65,57 +46,12 @@ param tags object = {
 // ---------------------------------------------------------------------------
 // Variables
 // ---------------------------------------------------------------------------
-var useExistingVnet = !empty(existingVnetId)
 var uniqueSuffix = uniqueString(resourceGroup().id, baseName)
-var newVnetName = '${baseName}-vnet-${uniqueSuffix}'
 var logAnalyticsName = '${baseName}-la-${uniqueSuffix}'
 var acaEnvName = '${baseName}-env-${uniqueSuffix}'
-var acaSubnetName = 'snet-aca-infra'
-var peSubnetName = 'snet-private-endpoints'
 
 // ---------------------------------------------------------------------------
-// 1. Virtual Network (created only when not using an existing one)
-// ---------------------------------------------------------------------------
-resource newVnet 'Microsoft.Network/virtualNetworks@2024-05-01' = if (!useExistingVnet) {
-  name: newVnetName
-  location: location
-  tags: tags
-  properties: {
-    addressSpace: {
-      addressPrefixes: [
-        vnetAddressPrefix
-      ]
-    }
-    subnets: [
-      {
-        name: acaSubnetName
-        properties: {
-          addressPrefix: acaSubnetPrefix
-          // ACA requires delegation to Microsoft.App/environments
-          delegations: [
-            {
-              name: 'Microsoft.App.environments'
-              properties: {
-                serviceName: 'Microsoft.App/environments'
-              }
-            }
-          ]
-        }
-      }
-      {
-        name: peSubnetName
-        properties: {
-          addressPrefix: peSubnetPrefix
-          // Private endpoints do not require delegation
-          privateEndpointNetworkPolicies: 'Disabled'
-        }
-      }
-    ]
-  }
-}
-
-// ---------------------------------------------------------------------------
-// 2. Log Analytics Workspace (required by ACA)
+// 1. Log Analytics Workspace (required by ACA)
 // ---------------------------------------------------------------------------
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: logAnalyticsName
@@ -130,16 +66,15 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Azure Container Apps Environment – Internal Only
+// 2. Azure Container Apps Environment – Internal Only
 // ---------------------------------------------------------------------------
 resource acaEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: acaEnvName
   location: location
   tags: tags
   properties: {
-    // Attach to the VNet infrastructure subnet (existing or newly created)
     vnetConfiguration: {
-      infrastructureSubnetId: useExistingVnet ? existingAcaSubnetId : newVnet!.properties.subnets[0].id
+      infrastructureSubnetId: acaSubnetId
       internal: true // ← makes the environment internal-only (no public IP)
     }
     appLogsConfiguration: {
@@ -159,7 +94,7 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Hello-World Container App
+// 3. Hello-World Container App
 // ---------------------------------------------------------------------------
 resource helloApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
@@ -198,10 +133,6 @@ resource helloApp 'Microsoft.App/containerApps@2024-03-01' = {
 // ---------------------------------------------------------------------------
 // Outputs – consumed by Phase 2 (private-dns.bicep) and deploy.ps1
 // ---------------------------------------------------------------------------
-output vnetName string = useExistingVnet ? last(split(existingVnetId, '/'))! : newVnet!.name
-output vnetId string = useExistingVnet ? existingVnetId : newVnet!.id
-output peSubnetId string = useExistingVnet ? existingPeSubnetId : newVnet!.properties.subnets[1].id
-output usingExistingVnet bool = useExistingVnet
 output acaEnvironmentId string = acaEnv.id
 output acaEnvironmentName string = acaEnv.name
 output acaEnvironmentDefaultDomain string = acaEnv.properties.defaultDomain

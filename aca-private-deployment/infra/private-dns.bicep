@@ -2,16 +2,21 @@
 // Phase 2: Private DNS Zone + Private Endpoint for ACA Environment
 // ============================================================================
 // Run AFTER Phase 1 (main.bicep) completes, using its outputs as parameters.
-// The ACA environment's default domain is only known at runtime, so this
-// phase accepts it as a parameter.
+//
+// Supports cross-subscription / cross-VNet scenarios:
+//   - The Private Endpoint subnet can reside in a DIFFERENT VNet, subscription,
+//     and resource group from the ACA environment.
+//   - If peVnetId differs from acaVnetId, the DNS zone is linked to BOTH VNets.
+//   - Deploy this template into the resource group where the PE subnet lives
+//     (or any group with cross-sub subnet access).
 // ============================================================================
 
 targetScope = 'resourceGroup'
 
 // ---------------------------------------------------------------------------
-// Parameters (populated from Phase 1 outputs)
+// Parameters (populated from Phase 1 outputs + PE subnet details)
 // ---------------------------------------------------------------------------
-@description('Azure region')
+@description('Azure region for the private endpoint (should match PE subnet region)')
 param location string = resourceGroup().location
 
 @description('ACA environment default domain (e.g., kindocean-abc123.eastus2.azurecontainerapps.io)')
@@ -20,26 +25,37 @@ param acaDefaultDomain string
 @description('ACA environment static IP')
 param acaStaticIp string
 
-@description('ACA environment resource ID')
+@description('ACA environment resource ID (can be cross-subscription)')
 param acaEnvironmentId string
-
-@description('VNet resource ID')
-param vnetId string
-
-@description('VNet name')
-param vnetName string
-
-@description('Subnet resource ID for private endpoints')
-param peSubnetId string
 
 @description('ACA environment name (used for PE naming)')
 param acaEnvironmentName string
+
+@description('Resource ID of the VNet where the ACA environment is deployed')
+param acaVnetId string
+
+@description('Name of the VNet where the ACA environment is deployed (for DNS link naming)')
+param acaVnetName string
+
+@description('Resource ID of the subnet for private endpoints. Can be in a different VNet/subscription/resource group.')
+param peSubnetId string
+
+@description('Resource ID of the VNet that contains the PE subnet. If same as acaVnetId, only one DNS link is created.')
+param peVnetId string
+
+@description('Name of the VNet that contains the PE subnet (for DNS link naming)')
+param peVnetName string
 
 @description('Tags')
 param tags object = {
   environment: 'demo'
   purpose: 'aca-private-deployment'
 }
+
+// ---------------------------------------------------------------------------
+// Variables
+// ---------------------------------------------------------------------------
+var isCrossVnet = acaVnetId != peVnetId
 
 // ---------------------------------------------------------------------------
 // 1. Private DNS Zone – matches the ACA environment's default domain
@@ -50,15 +66,29 @@ resource privateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   tags: tags
 }
 
-// Link the private DNS zone to the VNet
-resource dnsVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
+// Link the DNS zone to the ACA VNet (always)
+resource dnsAcaVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: privateDnsZone
-  name: '${vnetName}-link'
+  name: '${acaVnetName}-link'
   location: 'global'
   tags: tags
   properties: {
     virtualNetwork: {
-      id: vnetId
+      id: acaVnetId
+    }
+    registrationEnabled: false
+  }
+}
+
+// Link the DNS zone to the PE VNet (only if different from ACA VNet)
+resource dnsPeVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = if (isCrossVnet) {
+  parent: privateDnsZone
+  name: '${peVnetName}-link'
+  location: 'global'
+  tags: tags
+  properties: {
+    virtualNetwork: {
+      id: peVnetId
     }
     registrationEnabled: false
   }
@@ -138,3 +168,4 @@ resource peDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@202
 // ---------------------------------------------------------------------------
 output privateDnsZoneName string = privateDnsZone.name
 output privateEndpointId string = privateEndpoint.id
+output isCrossVnet bool = isCrossVnet

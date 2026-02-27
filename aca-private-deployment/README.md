@@ -7,6 +7,10 @@ This sample deploys an **Azure Container Apps (ACA) environment** that is:
 - Accessible via **Private Endpoint** + **Private DNS Zone**
 - Reachable from on-premises over **ExpressRoute** with proper **DNS forwarding**
 
+> **Note:** The VNet and subnets must already exist before deploying. The Private
+> Endpoint subnet can be in a **different VNet, subscription, and resource group**
+> from the ACA environment.
+
 ---
 
 ## Architecture
@@ -20,11 +24,13 @@ On-Premises Network
   │   (conditional forwarder ───►  Azure Private DNS Resolver / DNS forwarder VM)
   │    *.azurecontainerapps.io)         │
   │                                    │
-  └────────────────────────────── Azure VNet (10.100.0.0/16)
-                                       ├── snet-aca-infra      (10.100.0.0/23)  ← ACA Environment
-                                       ├── snet-private-endpoints (10.100.2.0/24) ← Private Endpoint
-                                       └── (optional) snet-dns-resolver (10.100.3.0/28) ← DNS forwarder
-                                       
+  └────────────────────────────── Azure VNet (existing)
+                                       ├── snet-aca-infra         ← ACA Environment (delegated, /23+)
+                                       └── (optional) snet-dns-resolver ← DNS forwarder
+
+                                  PE VNet (same or different VNet/subscription)
+                                       └── snet-private-endpoints ← Private Endpoint
+
                                   Private DNS Zone:
                                     <env-unique-id>.<region>.azurecontainerapps.io
                                       *.  → ACA static IP
@@ -41,6 +47,8 @@ On-Premises Network
 | Bicep CLI ≥ 0.28 | Bundled with Azure CLI |
 | Azure subscription | With `Contributor` + `Network Contributor` roles |
 | Resource providers | `Microsoft.App`, `Microsoft.Network`, `Microsoft.OperationalInsights` registered |
+| VNet + ACA subnet | Existing VNet with a subnet delegated to `Microsoft.App/environments` (/23 minimum) |
+| PE subnet | Existing subnet for private endpoints (can be in a different VNet/subscription) |
 | ExpressRoute circuit | Already provisioned and connected (for on-prem connectivity) |
 
 ---
@@ -51,39 +59,43 @@ The easiest way is to use the deploy script which orchestrates both phases:
 
 ```powershell
 cd aca-private-deployment
-.\deploy.ps1 -ResourceGroupName "rg-aca-private-demo" -Location "eastus2"
+
+# PE subnet in the same VNet as ACA
+.\deploy.ps1 -ResourceGroupName "rg-aca-private-demo" -Location "eastus2" `
+    -AcaSubnetId "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/snet-aca-infra" `
+    -PeSubnetId  "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/snet-pe"
+
+# PE subnet in a different VNet / subscription / resource group
+.\deploy.ps1 -ResourceGroupName "rg-aca-demo" -Location "eastus2" `
+    -AcaSubnetId "/subscriptions/<aca-sub>/resourceGroups/<aca-rg>/providers/Microsoft.Network/virtualNetworks/<aca-vnet>/subnets/snet-aca" `
+    -PeSubnetId  "/subscriptions/<pe-sub>/resourceGroups/<pe-rg>/providers/Microsoft.Network/virtualNetworks/<pe-vnet>/subnets/snet-pe"
 ```
 
 This script:
 1. Registers required resource providers
 2. Creates the resource group
-3. **Phase 1** – Deploys VNet, ACA Environment, and Hello-World app
+3. **Phase 1** – Deploys ACA Environment and Hello-World app into the existing VNet/subnet
 4. **Phase 2** – Uses runtime outputs to create Private DNS Zone + Private Endpoint
 5. Disables public network access via CLI
 
 ### Manual Deployment (Step-by-Step)
 
 ```powershell
-$RG       = "rg-aca-private-demo"
-$LOCATION = "eastus2"
+$RG         = "rg-aca-private-demo"
+$LOCATION   = "eastus2"
+$ACA_SUBNET = "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/snet-aca-infra"
+$PE_SUBNET  = "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/snet-pe"
 
 # Create resource group
 az group create --name $RG --location $LOCATION
 
-# Phase 1: VNet + ACA Environment + Hello-World
-az deployment group what-if `
-  --name "aca-private-phase1" `
-  --resource-group $RG `
-  --template-file ./infra/main.bicep `
-  --parameters ./infra/main.bicepparam
-
-# Deploy Phase 1
+# Phase 1: ACA Environment + Hello-World (uses existing VNet/subnet)
 az deployment group create `
   --name "aca-private-phase1" `
   --resource-group $RG `
   --template-file ./infra/main.bicep `
   --parameters ./infra/main.bicepparam `
-  --parameters location=$LOCATION
+  --parameters location=$LOCATION acaSubnetId=$ACA_SUBNET
 ```
 
 ### Capture Phase 1 outputs and deploy Phase 2
@@ -99,9 +111,12 @@ $ACA_STATIC_IP = $outputs.acaEnvironmentStaticIp.value
 $ACA_DOMAIN    = $outputs.acaEnvironmentDefaultDomain.value
 $ACA_ENV_ID    = $outputs.acaEnvironmentId.value
 $ACA_ENV_NAME  = $outputs.acaEnvironmentName.value
-$VNET_ID       = $outputs.vnetId.value
-$VNET_NAME     = $outputs.vnetName.value
-$PE_SUBNET_ID  = $outputs.peSubnetId.value
+
+# Derive VNet info from subnet IDs
+$ACA_VNET_ID   = ($ACA_SUBNET -split '/subnets/')[0]
+$ACA_VNET_NAME = ($ACA_VNET_ID -split '/')[-1]
+$PE_VNET_ID    = ($PE_SUBNET -split '/subnets/')[0]
+$PE_VNET_NAME  = ($PE_VNET_ID -split '/')[-1]
 
 Write-Host "App FQDN     : $ACA_FQDN"
 Write-Host "Static IP    : $ACA_STATIC_IP"
@@ -118,9 +133,11 @@ az deployment group create `
     acaStaticIp=$ACA_STATIC_IP `
     acaEnvironmentId=$ACA_ENV_ID `
     acaEnvironmentName=$ACA_ENV_NAME `
-    vnetId=$VNET_ID `
-    vnetName=$VNET_NAME `
-    peSubnetId=$PE_SUBNET_ID
+    acaVnetId=$ACA_VNET_ID `
+    acaVnetName=$ACA_VNET_NAME `
+    peSubnetId=$PE_SUBNET `
+    peVnetId=$PE_VNET_ID `
+    peVnetName=$PE_VNET_NAME
 
 # Disable public network access
 az containerapp env update `
