@@ -37,6 +37,30 @@ param containerImage string = 'mcr.microsoft.com/azuredocs/containerapps-hellowo
 @description('Container app name')
 param containerAppName string = 'helloworld'
 
+@description('Workload profile name for the dedicated compute tier')
+param workloadProfileName string = 'aca-d4'
+
+@description('Workload profile SKU (D4, D8, D16, D32, E4, E8, E16, E32)')
+@allowed([
+  'D4'
+  'D8'
+  'D16'
+  'D32'
+  'E4'
+  'E8'
+  'E16'
+  'E32'
+])
+param workloadProfileSize string = 'D4'
+
+@description('Minimum number of workload profile instances')
+@minValue(0)
+param workloadProfileMinCount int = 1
+
+@description('Maximum number of workload profile instances')
+@minValue(1)
+param workloadProfileMaxCount int = 3
+
 @description('Tags applied to every resource')
 param tags object = {
   environment: 'demo'
@@ -86,8 +110,10 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
     }
     workloadProfiles: [
       {
-        name: 'Consumption'
-        workloadProfileType: 'Consumption'
+        name: workloadProfileName
+        workloadProfileType: workloadProfileSize
+        minimumCount: workloadProfileMinCount
+        maximumCount: workloadProfileMaxCount
       }
     ]
   }
@@ -102,7 +128,7 @@ resource helloApp 'Microsoft.App/containerApps@2024-03-01' = {
   tags: tags
   properties: {
     managedEnvironmentId: acaEnv.id
-    workloadProfileName: 'Consumption'
+    workloadProfileName: workloadProfileName
     configuration: {
       ingress: {
         external: true // "external" within the internal environment → reachable on VNet
@@ -117,8 +143,8 @@ resource helloApp 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'helloworld'
           image: containerImage
           resources: {
-            cpu: json('0.25')
-            memory: '0.5Gi'
+            cpu: json('2')
+            memory: '4Gi'
           }
         }
       ]
