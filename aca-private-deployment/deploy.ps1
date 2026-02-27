@@ -4,37 +4,46 @@
 
 .DESCRIPTION
     This script orchestrates a two-phase Bicep deployment:
-      Phase 1 – VNet (or use existing), Log Analytics, ACA Environment (internal), Hello-World app
+      Phase 1 – Log Analytics, ACA Environment (internal), Hello-World app
       Phase 2 – Private DNS Zone + Private Endpoint (requires runtime outputs from Phase 1)
     Then disables public network access via CLI and prints test instructions.
 
+    The VNet and subnets must already exist before running this script.
+    The Private Endpoint subnet can be in a DIFFERENT VNet, subscription, and
+    resource group from the ACA environment.
+
 .PARAMETER ResourceGroupName
-    Name of the resource group (created if it doesn't exist).
+    Resource group for the ACA environment (created if it doesn't exist).
 
 .PARAMETER Location
-    Azure region for all resources.
+    Azure region for ACA resources.
 
-.PARAMETER ExistingVnetId
-    (Optional) Resource ID of an existing VNet. Leave empty to create a new one.
+.PARAMETER AcaSubnetId
+    (Required) Resource ID of the ACA infrastructure subnet.
+    Must have Microsoft.App/environments delegation and be at least /23.
 
-.PARAMETER ExistingAcaSubnetId
-    (Optional) Resource ID of an existing subnet for ACA infrastructure.
-    Must have Microsoft.App/environments delegation and be /23 or larger.
+.PARAMETER PeSubnetId
+    (Required) Resource ID of the private endpoint subnet. Can be in a different
+    VNet/subscription/resource group from the ACA subnet.
 
-.PARAMETER ExistingPeSubnetId
-    (Optional) Resource ID of an existing subnet for private endpoints.
-    Should have privateEndpointNetworkPolicies set to Disabled.
+.PARAMETER PeResourceGroupName
+    (Optional) Resource group where the PE subnet lives. Derived from PeSubnetId
+    if not specified. Phase 2 is deployed here.
+
+.PARAMETER PeLocation
+    (Optional) Region for the private endpoint. Defaults to Location.
 
 .EXAMPLE
-    # Create new VNet
-    .\deploy.ps1 -ResourceGroupName "rg-aca-private-demo" -Location "eastus2"
-
-.EXAMPLE
-    # Use existing VNet and subnets
+    # PE subnet in the same VNet as ACA
     .\deploy.ps1 -ResourceGroupName "rg-aca-private-demo" -Location "eastus2" `
-        -ExistingVnetId "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>" `
-        -ExistingAcaSubnetId "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/snet-aca" `
-        -ExistingPeSubnetId "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/snet-pe"
+        -AcaSubnetId "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/snet-aca-infra" `
+        -PeSubnetId  "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/snet-pe"
+
+.EXAMPLE
+    # PE subnet in a different VNet / subscription / resource group
+    .\deploy.ps1 -ResourceGroupName "rg-aca-demo" -Location "eastus2" `
+        -AcaSubnetId "/subscriptions/<aca-sub>/resourceGroups/<aca-rg>/providers/Microsoft.Network/virtualNetworks/<aca-vnet>/subnets/snet-aca" `
+        -PeSubnetId  "/subscriptions/<pe-sub>/resourceGroups/<pe-rg>/providers/Microsoft.Network/virtualNetworks/<pe-vnet>/subnets/snet-pe"
 #>
 
 [CmdletBinding()]
@@ -45,14 +54,17 @@ param(
     [Parameter(Mandatory = $false)]
     [string]$Location = "eastus2",
 
-    [Parameter(Mandatory = $false)]
-    [string]$ExistingVnetId = "",
+    [Parameter(Mandatory = $true)]
+    [string]$AcaSubnetId,
+
+    [Parameter(Mandatory = $true)]
+    [string]$PeSubnetId,
 
     [Parameter(Mandatory = $false)]
-    [string]$ExistingAcaSubnetId = "",
+    [string]$PeResourceGroupName = "",
 
     [Parameter(Mandatory = $false)]
-    [string]$ExistingPeSubnetId = ""
+    [string]$PeLocation = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -62,25 +74,49 @@ Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host " ACA Private VNet Deployment" -ForegroundColor Cyan
 Write-Host "========================================`n" -ForegroundColor Cyan
 
+# ── Derive VNet info from subnet resource IDs ──────────────────────────────
+# Subnet ID format: /subscriptions/.../providers/Microsoft.Network/virtualNetworks/<vnet>/subnets/<subnet>
+function Get-VnetInfoFromSubnetId([string]$SubnetId) {
+    $parts = $SubnetId -split '/'
+    $vnetName = $parts[8]
+    $vnetId   = ($SubnetId -split '/subnets/')[0]
+    $rg       = $parts[4]
+    return @{ VnetName = $vnetName; VnetId = $vnetId; ResourceGroup = $rg }
+}
+
+$acaInfo = Get-VnetInfoFromSubnetId -SubnetId $AcaSubnetId
+$peInfo  = Get-VnetInfoFromSubnetId -SubnetId $PeSubnetId
+
+$AcaVnetId   = $acaInfo.VnetId
+$AcaVnetName = $acaInfo.VnetName
+$PeVnetId    = $peInfo.VnetId
+$PeVnetName  = $peInfo.VnetName
+
+if ([string]::IsNullOrEmpty($PeResourceGroupName)) {
+    $PeResourceGroupName = $peInfo.ResourceGroup
+}
+if ([string]::IsNullOrEmpty($PeLocation)) {
+    $PeLocation = $Location
+}
+
+$isCrossVnet = $AcaVnetId -ne $PeVnetId
+
 # ── Pre-flight checks ──────────────────────────────────────────────────────
 Write-Host "[1/6] Checking Azure CLI..." -ForegroundColor Yellow
 az version --output none 2>$null
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Azure CLI is not installed or not in PATH. Install from https://aka.ms/installazurecli"
 }
-# Validate existing VNet parameters
-$useExistingVnet = -not [string]::IsNullOrEmpty($ExistingVnetId)
-if ($useExistingVnet) {
-    if ([string]::IsNullOrEmpty($ExistingAcaSubnetId) -or [string]::IsNullOrEmpty($ExistingPeSubnetId)) {
-        Write-Error "When using an existing VNet, you must provide both -ExistingAcaSubnetId and -ExistingPeSubnetId."
-    }
-    Write-Host "  Mode: Using EXISTING VNet" -ForegroundColor Green
-    Write-Host "    VNet       : $ExistingVnetId"
-    Write-Host "    ACA Subnet : $ExistingAcaSubnetId"
-    Write-Host "    PE Subnet  : $ExistingPeSubnetId"
-} else {
-    Write-Host "  Mode: Creating NEW VNet" -ForegroundColor Green
+
+Write-Host "  ACA Subnet : $AcaSubnetId" -ForegroundColor Green
+Write-Host "  ACA VNet   : $AcaVnetName ($AcaVnetId)"
+Write-Host "  PE Subnet  : $PeSubnetId" -ForegroundColor Green
+Write-Host "  PE VNet    : $PeVnetName ($PeVnetId)"
+if ($isCrossVnet) {
+    Write-Host "  (Cross-VNet) PE is in a different VNet – DNS zone will be linked to both VNets" -ForegroundColor Magenta
+    Write-Host "  PE Resource Group: $PeResourceGroupName" -ForegroundColor Magenta
 }
+
 # Ensure required providers are registered
 Write-Host "[2/6] Registering resource providers..." -ForegroundColor Yellow
 @("Microsoft.App", "Microsoft.Network", "Microsoft.OperationalInsights") | ForEach-Object {
@@ -92,30 +128,16 @@ Write-Host "[2/6] Registering resource providers..." -ForegroundColor Yellow
 Write-Host "`n[3/6] Creating resource group '$ResourceGroupName'..." -ForegroundColor Yellow
 az group create --name $ResourceGroupName --location $Location --output none
 
-# ── Phase 1: Deploy ACA Environment (+ VNet if not using existing) ──────────
-if ($useExistingVnet) {
-    Write-Host "`n[4/6] Phase 1 – Deploying ACA Environment & Hello-World app (existing VNet)..." -ForegroundColor Yellow
-} else {
-    Write-Host "`n[4/6] Phase 1 – Deploying VNet, ACA Environment & Hello-World app..." -ForegroundColor Yellow
-}
+# ── Phase 1: Deploy ACA Environment ─────────────────────────────────────────
+Write-Host "`n[4/6] Phase 1 – Deploying ACA Environment & Hello-World app..." -ForegroundColor Yellow
 Write-Host "  (this may take 5-10 minutes)" -ForegroundColor DarkGray
-
-# Build parameter overrides
-$phase1Params = @(
-    "location=$Location"
-)
-if ($useExistingVnet) {
-    $phase1Params += "existingVnetId=$ExistingVnetId"
-    $phase1Params += "existingAcaSubnetId=$ExistingAcaSubnetId"
-    $phase1Params += "existingPeSubnetId=$ExistingPeSubnetId"
-}
 
 $phase1Result = az deployment group create `
     --name "aca-private-phase1" `
     --resource-group $ResourceGroupName `
     --template-file "$InfraDir\main.bicep" `
     --parameters "$InfraDir\main.bicepparam" `
-    --parameters @phase1Params `
+    --parameters location=$Location acaSubnetId=$AcaSubnetId `
     --query "properties.outputs" `
     --output json | ConvertFrom-Json
 
@@ -128,33 +150,39 @@ $acaDomain     = $phase1Result.acaEnvironmentDefaultDomain.value
 $acaStaticIp   = $phase1Result.acaEnvironmentStaticIp.value
 $acaEnvId      = $phase1Result.acaEnvironmentId.value
 $acaEnvName    = $phase1Result.acaEnvironmentName.value
-$vnetId        = $phase1Result.vnetId.value
-$vnetName      = $phase1Result.vnetName.value
-$peSubnetId    = $phase1Result.peSubnetId.value
 $appFqdn       = $phase1Result.containerAppFqdn.value
 
 Write-Host "`n  Phase 1 Outputs:" -ForegroundColor Green
 Write-Host "    ACA Domain   : $acaDomain"
 Write-Host "    ACA Static IP: $acaStaticIp"
 Write-Host "    App FQDN     : $appFqdn"
-Write-Host "    VNet Name    : $vnetName"
+Write-Host "    ACA VNet     : $AcaVnetName"
+Write-Host "    PE Subnet    : $PeSubnetId"
+if ($isCrossVnet) {
+    Write-Host "    (Cross-VNet) PE VNet: $PeVnetName in RG: $PeResourceGroupName" -ForegroundColor Magenta
+}
 
 # ── Phase 2: Private DNS Zone + Private Endpoint ────────────────────────────
 Write-Host "`n[5/6] Phase 2 – Creating Private DNS Zone & Private Endpoint..." -ForegroundColor Yellow
+if ($PeResourceGroupName -ne $ResourceGroupName) {
+    Write-Host "  Deploying into PE resource group: $PeResourceGroupName" -ForegroundColor Magenta
+}
 
 $phase2Result = az deployment group create `
     --name "aca-private-phase2" `
-    --resource-group $ResourceGroupName `
+    --resource-group $PeResourceGroupName `
     --template-file "$InfraDir\private-dns.bicep" `
     --parameters `
-        location=$Location `
+        location=$PeLocation `
         acaDefaultDomain=$acaDomain `
         acaStaticIp=$acaStaticIp `
         acaEnvironmentId=$acaEnvId `
         acaEnvironmentName=$acaEnvName `
-        vnetId=$vnetId `
-        vnetName=$vnetName `
-        peSubnetId=$peSubnetId `
+        acaVnetId=$AcaVnetId `
+        acaVnetName=$AcaVnetName `
+        peSubnetId=$PeSubnetId `
+        peVnetId=$PeVnetId `
+        peVnetName=$PeVnetName `
     --query "properties.outputs" `
     --output json | ConvertFrom-Json
 
