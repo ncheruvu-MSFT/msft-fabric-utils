@@ -1,0 +1,34 @@
+dataset: contoso.employees
+description: Internal employee directory (HR sensitive)
+owner: hr-data@contoso.com
+tier: silver
+sensitivity_default: Highly-Confidential-Restricted
+columns:
+  - name: employee_id
+    type: int
+    classifications: [PrimaryKey]
+  - name: first_name
+    type: string
+    classifications: [Person.Name]
+    pii: true
+  - name: last_name
+    type: string
+    classifications: [Person.Name]
+    pii: true
+  - name: corporate_email
+    type: string
+    classifications: [MICROSOFT.PERSONAL.EMAIL, INTERNAL_EMPLOYEE_ID]
+    pii: true
+    sensitivity: Confidential-PII
+  - name: manager_id
+    type: int
+    description: FK to employees.employee_id (org hierarchy)
+  - name: department
+    type: string
+  - name: salary_usd
+    type: int
+    description: Annual compensation in USD
+    classifications: [HR_COMPENSATION]
+    sensitivity: Highly-Confidential-Restricted
+  - name: hire_date
+    type: date

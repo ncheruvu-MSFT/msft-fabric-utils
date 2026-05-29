@@ -1,0 +1,16 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.secrets/
+.cert.log
+.ws.log
+.lin.log
+.src.log
+.pop.log
+.domains.json
+.workflows.json
+.wf.log
+.pol.json
+.domains.tree.txt

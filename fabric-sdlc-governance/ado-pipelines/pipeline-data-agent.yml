@@ -1,0 +1,190 @@
+# ============================================================
+# Fabric Data Agent — Dev pipeline
+#   1. Validate ontology contract (contracts/ontology/sales.yml)
+#   2. Seed sample sales data into Dev Lakehouse (OneLake REST)
+#   3. Trigger the Data Agent notebook in Dev workspace (Fabric Jobs REST)
+#   4. (gated) Promote ontology + notebook to Test / Prod via fabric-cicd
+#
+# Auth: ADO Workload Identity Federation (no secrets).
+# Service connection: AZURE_SERVICE_CONNECTION variable, scoped to a federated
+# app reg that is a Member of fabric-sales-dev workspace AND has OneLake RW.
+# ============================================================
+name: Fabric-DataAgent-$(Date:yyyyMMdd)-$(Rev:r)
+
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include:
+      - fabric-sdlc-governance/contracts/ontology/sales.yml
+      - fabric-sdlc-governance/scripts/seed_sales_samples.py
+      - fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py
+      - fabric-sdlc-governance/notebook/fabric-data-agent-sales-demo.ipynb
+      - fabric-sdlc-governance/ado-pipelines/pipeline-data-agent.yml
+
+pr: none
+
+variables:
+  - template: parameter.yml
+  - name: workspaceDev
+    value: 'Fabric Demo - Sales'
+  - name: workspaceTest
+    value: 'fabric-sales-test'
+  - name: workspaceProd
+    value: 'fabric-sales-prod'
+  - name: lakehouseName
+    value: 'lh_silver'
+  - name: notebookName
+    value: 'fabric-data-agent-sales-demo'
+  - name: ontologyFile
+    value: 'fabric-sdlc-governance/contracts/ontology/sales.yml'
+
+stages:
+# ─── 1. Validate ontology contract ─────────────────────────
+- stage: Validate
+  displayName: '1. Validate ontology + scripts'
+  jobs:
+    - job: validate
+      pool: { vmImage: 'ubuntu-latest' }
+      steps:
+        - checkout: self
+        - template: templates/install-fabric-tools.yml
+        - script: |
+            python fabric-sdlc-governance/scripts/validate_ontology.py \
+              $(ontologyFile)
+          displayName: 'Validate sales ontology'
+        - script: |
+            python -m py_compile \
+              fabric-sdlc-governance/scripts/seed_sales_samples.py \
+              fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py
+          displayName: 'Lint helper scripts'
+
+# ─── 2. Deploy to Dev ──────────────────────────────────────
+- stage: Dev
+  displayName: '2. Deploy -> Dev'
+  dependsOn: Validate
+  condition: succeeded()
+  jobs:
+    - deployment: dev_deploy
+      environment: fabric-dev
+      pool: { vmImage: 'ubuntu-latest' }
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: templates/install-fabric-tools.yml
+
+              - task: AzureCLI@2
+                displayName: '2a. Seed sample sales data into Dev Lakehouse'
+                inputs:
+                  azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                  scriptType: bash
+                  addSpnToEnvironment: true
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    set -euo pipefail
+                    export AZURE_CLIENT_ID="$servicePrincipalId"
+                    export AZURE_TENANT_ID="$tenantId"
+                    export AZURE_FEDERATED_TOKEN="$idToken"
+                    python fabric-sdlc-governance/scripts/seed_sales_samples.py \
+                      --workspace "$(workspaceDev)" \
+                      --lakehouse "$(lakehouseName)" \
+                      --upload
+
+              - task: AzureCLI@2
+                displayName: '2b. Trigger Data Agent notebook in Dev'
+                inputs:
+                  azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                  scriptType: bash
+                  addSpnToEnvironment: true
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    set -euo pipefail
+                    export AZURE_CLIENT_ID="$servicePrincipalId"
+                    export AZURE_TENANT_ID="$tenantId"
+                    export AZURE_FEDERATED_TOKEN="$idToken"
+                    python fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py \
+                      --workspace "$(workspaceDev)" \
+                      --notebook  "$(notebookName)" \
+                      --ontology  "$(ontologyFile)"
+
+              - script: |
+                  echo "Dev deploy OK. Data Agent 'sales_pipeline_agent' published in $(workspaceDev)."
+                displayName: 'Summary'
+
+# ─── 3. Promote to Test (approval) ─────────────────────────
+- stage: Test
+  displayName: '3. Promote -> Test (approval)'
+  dependsOn: Dev
+  condition: succeeded()
+  variables:
+    FABRIC_WORKSPACE_NAME: $(workspaceTest)
+  jobs:
+    - deployment: test_deploy
+      environment: fabric-test
+      pool: { vmImage: 'ubuntu-latest' }
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: templates/install-fabric-tools.yml
+              - template: templates/deploy-with-fabric-cicd.yml
+                parameters:
+                  itemsPath: 'fabric-sdlc-governance/notebook'
+
+              - task: AzureCLI@2
+                displayName: 'Trigger Data Agent notebook in Test'
+                inputs:
+                  azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                  scriptType: bash
+                  addSpnToEnvironment: true
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    set -euo pipefail
+                    export AZURE_CLIENT_ID="$servicePrincipalId"
+                    export AZURE_TENANT_ID="$tenantId"
+                    export AZURE_FEDERATED_TOKEN="$idToken"
+                    python fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py \
+                      --workspace "$(workspaceTest)" \
+                      --notebook  "$(notebookName)" \
+                      --ontology  "$(ontologyFile)"
+
+# ─── 4. Promote to Prod (approval) ─────────────────────────
+- stage: Prod
+  displayName: '4. Promote -> Prod (approval)'
+  dependsOn: Test
+  condition: succeeded()
+  variables:
+    FABRIC_WORKSPACE_NAME: $(workspaceProd)
+  jobs:
+    - deployment: prod_deploy
+      environment: fabric-prod
+      pool: { vmImage: 'ubuntu-latest' }
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: templates/install-fabric-tools.yml
+              - template: templates/deploy-with-fabric-cicd.yml
+                parameters:
+                  itemsPath: 'fabric-sdlc-governance/notebook'
+
+              - task: AzureCLI@2
+                displayName: 'Trigger Data Agent notebook in Prod'
+                inputs:
+                  azureSubscription: $(AZURE_SERVICE_CONNECTION)
+                  scriptType: bash
+                  addSpnToEnvironment: true
+                  scriptLocation: inlineScript
+                  inlineScript: |
+                    set -euo pipefail
+                    export AZURE_CLIENT_ID="$servicePrincipalId"
+                    export AZURE_TENANT_ID="$tenantId"
+                    export AZURE_FEDERATED_TOKEN="$idToken"
+                    python fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py \
+                      --workspace "$(workspaceProd)" \
+                      --notebook  "$(notebookName)" \
+                      --ontology  "$(ontologyFile)"

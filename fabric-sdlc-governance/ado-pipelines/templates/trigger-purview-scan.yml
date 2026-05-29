@@ -1,0 +1,24 @@
+# Run Purview scan + auto-classification + label sync after deploy.
+parameters:
+  - name: collection
+    type: string
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Purview scan + classify + label ($(FABRIC_WORKSPACE_NAME))'
+    inputs:
+      azureSubscription: $(AZURE_SERVICE_CONNECTION)
+      scriptType: pscore
+      scriptLocation: inlineScript
+      addSpnToEnvironment: true
+      inlineScript: |
+        $env:AZURE_TENANT_ID = "$env:tenantId"
+        $env:AZURE_CLIENT_ID = "$env:servicePrincipalId"
+        $env:AZURE_FEDERATED_TOKEN = "$env:idToken"
+        # Reuse az session to mint a Purview token (works because WIF identity has Purview RBAC)
+        $purviewTok = (az account get-access-token --resource https://purview.azure.net --query accessToken -o tsv)
+        $env:PURVIEW_ACCESS_TOKEN = $purviewTok
+        python scripts/purview_fabric_governance.py
+        python scripts/purview_publish_glossary.py --collection "${{ parameters.collection }}"
+        python scripts/purview_apply_classification_rules.py
+        python scripts/purview_apply_labels.py --default-label "$(SENSITIVITY_DEFAULT)"

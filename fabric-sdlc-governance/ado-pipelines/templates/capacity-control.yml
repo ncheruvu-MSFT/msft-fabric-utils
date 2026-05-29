@@ -1,0 +1,23 @@
+# Resume or pause Fabric capacity. WIF-auth via service connection.
+parameters:
+  - name: action
+    type: string
+    values: [resume, suspend]
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Fabric capacity ${{ parameters.action }}'
+    inputs:
+      azureSubscription: $(AZURE_SERVICE_CONNECTION)
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        $rg   = "$(FABRIC_CAPACITY_RG)"
+        $name = "$(FABRIC_CAPACITY_NAME)"
+        $sub  = "$(AZURE_SUBSCRIPTION_ID)"
+        az account set --subscription $sub
+        $state = (az resource show --resource-group $rg --name $name --resource-type Microsoft.Fabric/capacities --query properties.state -o tsv)
+        Write-Host "Current state: $state"
+        $action = "${{ parameters.action }}"
+        if ($action -eq "resume"  -and $state -ne "Active")    { az fabric capacity resume  --resource-group $rg --capacity-name $name; Write-Host "Resumed." }
+        if ($action -eq "suspend" -and $state -eq "Active")    { az fabric capacity suspend --resource-group $rg --capacity-name $name; Write-Host "Suspended." }

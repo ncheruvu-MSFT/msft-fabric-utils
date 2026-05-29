@@ -1,0 +1,83 @@
+<mxfile host="app.diagrams.net" modified="2026-05-12T00:00:00.000Z" agent="Mozilla/5.0" version="24.0.0">
+  <diagram name="Fabric SDLC + Purview" id="fabric-sdlc">
+    <mxGraphModel dx="1422" dy="757" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Repos -->
+        <mxCell id="r1" value="ADO repo&#10;Fabric-DataEngineering" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="80" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" value="GitHub repo&#10;fabric-reporting" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="60" y="170" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="r3" value="GitHub repo&#10;fabric-analytics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="260" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Pipelines -->
+        <mxCell id="p1" value="ADO pipeline&#10;pipeline-de.yml&#10;(uses Fabric DevOps ext + fabric-cicd)" style="shape=process;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="320" y="70" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" value="ADO pipeline&#10;pipeline-reporting.yml" style="shape=process;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="320" y="160" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" value="ADO pipeline&#10;pipeline-analytics.yml" style="shape=process;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="320" y="250" width="240" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- Dev workspaces -->
+        <mxCell id="wd1" value="de-dev (Git)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="640" y="80" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wd2" value="reporting-dev (Git)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="640" y="170" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wd3" value="analytics-dev (Git)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="640" y="260" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- UAT workspaces -->
+        <mxCell id="wu1" value="de-uat" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="860" y="80" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wu2" value="reporting-uat" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="860" y="170" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wu3" value="analytics-uat" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="860" y="260" width="160" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Prod -->
+        <mxCell id="prod" value="analytics-prod (shared)&#10;F32/F64 capacity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1080" y="160" width="220" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Purview -->
+        <mxCell id="pv" value="Microsoft Purview&#10;Unified Catalog&#10;(domains + scans)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bac8d3;strokeColor=#23445d;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1360" y="170" width="200" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <mxCell style="endArrow=classic;html=1;" edge="1" parent="1" source="r1" target="p1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell style="endArrow=classic;html=1;" edge="1" parent="1" source="r2" target="p2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell style="endArrow=classic;html=1;" edge="1" parent="1" source="r3" target="p3"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell style="endArrow=classic;html=1;" edge="1" parent="1" source="p1" target="wd1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell style="endArrow=classic;html=1;" edge="1" parent="1" source="p2" target="wd2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell style="endArrow=classic;html=1;" edge="1" parent="1" source="p3" target="wd3"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell value="fabric-cicd" style="endArrow=classic;html=1;" edge="1" parent="1" source="wd1" target="wu1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell value="fabric-cicd" style="endArrow=classic;html=1;" edge="1" parent="1" source="wd2" target="wu2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell value="fabric-cicd" style="endArrow=classic;html=1;" edge="1" parent="1" source="wd3" target="wu3"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell value="approval gate" style="endArrow=classic;html=1;" edge="1" parent="1" source="wu1" target="prod"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell value="approval gate" style="endArrow=classic;html=1;" edge="1" parent="1" source="wu2" target="prod"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell value="approval gate" style="endArrow=classic;html=1;" edge="1" parent="1" source="wu3" target="prod"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell value="weekly scan" style="endArrow=classic;html=1;dashed=1;" edge="1" parent="1" source="prod" target="pv"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

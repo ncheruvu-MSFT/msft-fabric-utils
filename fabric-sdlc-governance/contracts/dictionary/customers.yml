@@ -1,0 +1,52 @@
+dataset: contoso.customers
+description: Master record of retail customers (PII-rich)
+owner: data-stewards@contoso.com
+tier: silver
+sensitivity_default: Confidential-PII
+columns:
+  - name: customer_id
+    type: int
+    description: Surrogate key
+    classifications: [PrimaryKey]
+  - name: first_name
+    type: string
+    description: Customer given name
+    classifications: [Person.Name]
+    pii: true
+  - name: last_name
+    type: string
+    description: Customer family name
+    classifications: [Person.Name]
+    pii: true
+  - name: email
+    type: string
+    description: Primary email address
+    classifications: [MICROSOFT.PERSONAL.EMAIL]
+    pii: true
+    sensitivity: Confidential-PII
+  - name: phone
+    type: string
+    description: E.164 phone number
+    classifications: [MICROSOFT.PERSONAL.PHONE_NUMBER]
+    pii: true
+    sensitivity: Confidential-PII
+  - name: city
+    type: string
+    description: City of residence (coarse)
+    classifications: [Person.Address]
+    pii: false
+  - name: loyalty_id
+    type: string
+    description: 9-digit loyalty programme identifier
+    classifications: [CUSTOMER_LOYALTY_ID]
+    pii: true
+    sensitivity: Confidential-PII
+  - name: credit_card_last4
+    type: string
+    description: Last 4 digits of card on file (PCI)
+    classifications: [MICROSOFT.FINANCIAL.CREDIT_CARD_NUMBER]
+    pii: true
+    sensitivity: Highly-Confidential-Restricted
+  - name: signup_date
+    type: date
+    description: Date the customer registered

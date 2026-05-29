@@ -1,0 +1,84 @@
+# ============================================================
+# Fabric Reporting Pipeline — Power BI / SemanticModel deploys
+# ============================================================
+name: Fabric-Reporting-$(Date:yyyyMMdd)-$(Rev:r)
+
+trigger:
+  branches: { include: [main] }
+  paths:    { include: [fabric/reporting/**] }
+
+pr:
+  branches: { include: [main] }
+
+variables:
+  - group: fabric-shared
+
+stages:
+- stage: Build
+  jobs:
+    - job: validate
+      pool: { vmImage: 'ubuntu-latest' }
+      steps:
+        - checkout: self
+        - template: templates/validate-artifacts.yml
+
+- stage: DeployDev
+  dependsOn: Build
+  variables: [ { group: fabric-dev } ]
+  jobs:
+    - deployment: deploy_dev
+      environment: fabric-dev
+      pool: { vmImage: 'ubuntu-latest' }
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: templates/capacity-control.yml
+                parameters: { action: resume }
+              - template: templates/deploy-with-fabric-cicd.yml
+                parameters:
+                  itemsPath: 'fabric/reporting'
+                  itemTypes: ['Report', 'SemanticModel']
+              - template: templates/trigger-purview-scan.yml
+                parameters: { collection: '$(PURVIEW_COLLECTION)' }
+
+- stage: DeployTest
+  dependsOn: DeployDev
+  variables: [ { group: fabric-test } ]
+  jobs:
+    - deployment: deploy_test
+      environment: fabric-test
+      pool: { vmImage: 'ubuntu-latest' }
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: templates/capacity-control.yml
+                parameters: { action: resume }
+              - template: templates/deploy-with-fabric-cicd.yml
+                parameters:
+                  itemsPath: 'fabric/reporting'
+                  itemTypes: ['Report', 'SemanticModel']
+
+- stage: DeployProd
+  dependsOn: DeployTest
+  variables: [ { group: fabric-prod } ]
+  jobs:
+    - deployment: deploy_prod
+      environment: fabric-prod
+      pool: { vmImage: 'ubuntu-latest' }
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: templates/capacity-control.yml
+                parameters: { action: resume }
+              - template: templates/deploy-with-fabric-cicd.yml
+                parameters:
+                  itemsPath: 'fabric/reporting'
+                  itemTypes: ['Report', 'SemanticModel']
+              - template: templates/trigger-purview-scan.yml
+                parameters: { collection: '$(PURVIEW_COLLECTION)' }

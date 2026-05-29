@@ -1,0 +1,320 @@
+<mxfile host="app.diagrams.net" agent="copilot" version="24.7.0">
+  <diagram name="Fabric OneLake Architecture" id="fabric-onelake-v4">
+    <mxGraphModel dx="2400" dy="1400" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1460" math="0" shadow="0" background="#16213e">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ===== CANVAS ===== -->
+        <mxCell id="bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#2a2a4a;arcSize=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="1860" height="1420" as="geometry" />
+        </mxCell>
+
+        <mxCell id="title" value="Technical Solution Architecture" style="text;html=1;align=center;verticalAlign=middle;fontSize=28;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="500" y="35" width="900" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Microsoft Fabric OneLake  •  Mirroring  •  Medallion  •  Consumption  •  msft-fabric-utils repo modules" style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontColor=#88AADD;" vertex="1" parent="1">
+          <mxGeometry x="450" y="78" width="1000" height="20" as="geometry" />
+        </mxCell>
+
+        <!-- ===== TIER BACKGROUNDS ===== -->
+        <mxCell id="sec-sources" value="DATA SOURCES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d1b3e;strokeColor=#1565C0;strokeWidth=2;fontColor=#4488CC;fontSize=13;fontStyle=1;verticalAlign=top;align=left;spacingLeft=16;spacingTop=8;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="50" y="115" width="320" height="925" as="geometry" />
+        </mxCell>
+        <mxCell id="sec-ingest" value="INGEST" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2e0d1a;strokeColor=#C62828;strokeWidth=2;fontColor=#DD8888;fontSize=13;fontStyle=1;verticalAlign=top;align=center;spacingTop=8;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="400" y="115" width="220" height="925" as="geometry" />
+        </mxCell>
+        <mxCell id="sec-onelake" value="FABRIC ONELAKE  —  MEDALLION ARCHITECTURE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a0d2e;strokeColor=#7B1FA2;strokeWidth=2;fontColor=#BB88DD;fontSize=14;fontStyle=1;verticalAlign=top;align=center;spacingTop=8;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="650" y="115" width="640" height="925" as="geometry" />
+        </mxCell>
+        <mxCell id="sec-serve" value="SERVE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d1a2e;strokeColor=#283593;strokeWidth=2;fontColor=#6688BB;fontSize=13;fontStyle=1;verticalAlign=top;align=center;spacingTop=8;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="115" width="240" height="925" as="geometry" />
+        </mxCell>
+        <mxCell id="sec-consume" value="CONSUMPTION LAYER" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d2e1a;strokeColor=#2E7D32;strokeWidth=2;fontColor=#66BB88;fontSize=13;fontStyle=1;verticalAlign=top;align=center;spacingTop=8;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="1590" y="115" width="260" height="925" as="geometry" />
+        </mxCell>
+
+        <!-- ===== SOURCES (single-column stack) ===== -->
+        <mxCell id="grp-saas" value="SaaS Applications" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#13284a;strokeColor=#1565C0;fontColor=#88BBEE;fontSize=11;fontStyle=1;verticalAlign=top;align=center;spacingTop=4;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="70" y="160" width="280" height="135" as="geometry" />
+        </mxCell>
+        <mxCell id="src-salesforce" value="Salesforce" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00A1E0;strokeColor=#00A1E0;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="195" width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="src-workday" value="Workday" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F38B00;strokeColor=#F38B00;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="245" width="240" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp-azure" value="Azure Data Stores" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#13284a;strokeColor=#1565C0;fontColor=#88BBEE;fontSize=11;fontStyle=1;verticalAlign=top;align=center;spacingTop=4;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="70" y="315" width="280" height="195" as="geometry" />
+        </mxCell>
+        <mxCell id="src-sqldb" value="Azure SQL DB / Server" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#0078D4;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="350" width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="src-sqlmi" value="Azure SQL Managed Instance" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#0078D4;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="400" width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="src-cosmos" value="Cosmos DB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#0078D4;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="450" width="240" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp-aws" value="AWS &amp; Open Source" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#13284a;strokeColor=#1565C0;fontColor=#88BBEE;fontSize=11;fontStyle=1;verticalAlign=top;align=center;spacingTop=4;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="70" y="530" width="280" height="245" as="geometry" />
+        </mxCell>
+        <mxCell id="src-postgres" value="PostgreSQL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#336791;strokeColor=#336791;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="565" width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="src-rds" value="AWS RDS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3B48CC;strokeColor=#3B48CC;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="615" width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="src-s3" value="AWS S3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B660F;strokeColor=#1B660F;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="665" width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="src-adls" value="ADLS Gen2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#0078D4;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="715" width="240" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="grp-stream" value="Streaming / Event Sources" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#13284a;strokeColor=#1565C0;fontColor=#88BBEE;fontSize=11;fontStyle=1;verticalAlign=top;align=center;spacingTop=4;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="70" y="795" width="280" height="135" as="geometry" />
+        </mxCell>
+        <mxCell id="src-eh" value="Event Hubs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#0078D4;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="830" width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="src-iot" value="IoT Hub" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#0078D4;fontColor=#FFFFFF;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="90" y="880" width="240" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ===== INGEST GATEWAYS ===== -->
+        <mxCell id="gw-open" value="Open&#10;Mirroring" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7B1FA2;strokeColor=#BB88DD;fontColor=#FFFFFF;fontSize=13;fontStyle=1;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="430" y="190" width="160" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="gw-native" value="Native&#10;Mirroring" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;strokeColor=#4499DD;fontColor=#FFFFFF;fontSize=13;fontStyle=1;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="430" y="345" width="160" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="gw-shortcuts" value="Shortcuts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E7D32;strokeColor=#55BB66;fontColor=#FFFFFF;fontSize=13;fontStyle=1;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="430" y="560" width="160" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="gw-rti" value="Real-Time&#10;Intelligence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#FF8C42;fontColor=#FFFFFF;fontSize=13;fontStyle=1;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="430" y="825" width="160" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ===== ONELAKE — MEDALLION ===== -->
+        <mxCell id="onelake-icon" value="Fabric&#10;OneLake" style="ellipse;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#4499DD;fontColor=#FFFFFF;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="680" y="360" width="110" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="bronze" value="BRONZE&#10;Raw" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#8C5A2B;strokeColor=#CD7F32;strokeWidth=2;fontColor=#FFFFFF;fontSize=13;fontStyle=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="830" y="370" width="130" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="silver" value="SILVER&#10;Cleansed" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6E6E80;strokeColor=#C0C0C0;strokeWidth=2;fontColor=#FFFFFF;fontSize=13;fontStyle=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="370" width="130" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="gold" value="GOLD&#10;Curated" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B8860B;strokeColor=#FFD700;strokeWidth=2;fontColor=#FFFFFF;fontSize=13;fontStyle=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="370" width="130" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="df1-lbl" value="Data Factory" style="text;html=1;align=center;fontColor=#CCCCDD;fontSize=10;fontStyle=2;labelBackgroundColor=#1a0d2e;" vertex="1" parent="1">
+          <mxGeometry x="960" y="478" width="80" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="df2-lbl" value="Data Factory" style="text;html=1;align=center;fontColor=#CCCCDD;fontSize=10;fontStyle=2;labelBackgroundColor=#1a0d2e;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="478" width="80" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="kqldb" value="KQL Database&#10;(Eventhouse)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#FF8C42;strokeWidth=2;fontColor=#FFFFFF;fontSize=11;fontStyle=1;arcSize=15;" vertex="1" parent="1">
+          <mxGeometry x="830" y="835" width="160" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gov-bar" value="OneLake foundation  •  Microsoft Purview governance &amp; lineage  •  Workspace RBAC  •  Open Delta-Parquet format" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d2e1a;strokeColor=#2E7D32;fontColor=#66BB88;fontSize=11;fontStyle=1;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="670" y="975" width="600" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ===== SERVE ===== -->
+        <mxCell id="warehouse" value="Fabric&#10;Data Warehouse" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565C0;strokeColor=#4488CC;strokeWidth=2;fontColor=#FFFFFF;fontSize=12;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="170" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="marts" value="Data Marts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2196F3;strokeColor=#4488CC;fontColor=#FFFFFF;fontSize=12;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="270" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="lakehouse" value="Lakehouse&#10;(SQL endpoint)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#283593;strokeColor=#6688BB;fontColor=#FFFFFF;fontSize=12;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="360" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="semantic" value="Semantic Models&#10;(Direct Lake)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#7B1FA2;strokeColor=#BB88DD;fontColor=#FFFFFF;fontSize=12;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="460" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="ml-model" value="ML Models&#10;(Fabric DS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00BCF2;strokeColor=#88DDEE;fontColor=#FFFFFF;fontSize=12;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="600" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rti-set" value="Real-Time&#10;Eventstreams" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#FF8C42;fontColor=#FFFFFF;fontSize=12;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="840" width="200" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ===== CONSUMERS ===== -->
+        <mxCell id="cons-analyst" value="Data Analysts&#10;(SQL / T-SQL)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#5C2D91;strokeColor=#9B7BC2;fontColor=#FFFFFF;fontSize=11;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1610" y="170" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cons-pbi" value="Power BI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F2C811;strokeColor=#F2C811;fontColor=#1a1a2e;fontSize=12;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1610" y="265" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cons-copilot" value="Copilot &amp; AI&#10;(Foundry Agents)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0078D4;strokeColor=#4499DD;fontColor=#FFFFFF;fontSize=11;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1610" y="360" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cons-apps" value="LOB Apps &amp; APIs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#283593;strokeColor=#6688BB;fontColor=#FFFFFF;fontSize=11;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1610" y="460" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cons-ds" value="Data Science&#10;Notebooks" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00BCF2;strokeColor=#88DDEE;fontColor=#FFFFFF;fontSize=11;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1610" y="600" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cons-rtd" value="Real-Time&#10;Dashboards" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#FF8C42;fontColor=#FFFFFF;fontSize=11;fontStyle=1;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1610" y="840" width="220" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ===== SOURCE → GATEWAY (clean horizontals) ===== -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#BB88DD;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="src-salesforce" target="gw-open"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#BB88DD;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="src-workday" target="gw-open"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#4499DD;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.17;entryDx=0;entryDy=0;" edge="1" parent="1" source="src-sqldb" target="gw-native"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#4499DD;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="src-sqlmi" target="gw-native"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#4499DD;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.83;entryDx=0;entryDy=0;" edge="1" parent="1" source="src-cosmos" target="gw-native"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#55BB66;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.13;entryDx=0;entryDy=0;" edge="1" parent="1" source="src-postgres" target="gw-shortcuts"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#55BB66;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.38;entryDx=0;entryDy=0;" edge="1" parent="1" source="src-rds" target="gw-shortcuts"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#55BB66;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.63;entryDx=0;entryDy=0;" edge="1" parent="1" source="src-s3" target="gw-shortcuts"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#55BB66;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.88;entryDx=0;entryDy=0;" edge="1" parent="1" source="src-adls" target="gw-shortcuts"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#FF8C42;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="src-eh" target="gw-rti"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#FF8C42;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="src-iot" target="gw-rti"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== GATEWAY → ONELAKE (waypoints route AROUND onelake-icon via x=810 gap) ===== -->
+        <mxCell id="t-open-bronze" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#BB88DD;strokeWidth=4;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="gw-open" target="bronze">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="810" y="240" /><mxPoint x="810" y="393" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="t-native-bronze" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#4499DD;strokeWidth=4;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="gw-native" target="onelake-icon"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="t-short-bronze" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#55BB66;strokeWidth=4;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="gw-shortcuts" target="bronze">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="810" y="660" /><mxPoint x="810" y="437" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="t-rti-kql" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#FF8C42;strokeWidth=4;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="gw-rti" target="kqldb"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- OneLake substrate dashed link -->
+        <mxCell id="ol-bronze" style="edgeStyle=none;html=1;strokeColor=#4499DD;strokeWidth=2;dashed=1;endArrow=none;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="onelake-icon" target="bronze"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== MEDALLION FLOW ===== -->
+        <mxCell id="m1" style="edgeStyle=none;html=1;strokeColor=#FFD700;strokeWidth=3;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="bronze" target="silver"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="m2" style="edgeStyle=none;html=1;strokeColor=#FFD700;strokeWidth=3;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="silver" target="gold"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== GOLD → SERVE (staggered exits + routed in 1300→1340 gap) ===== -->
+        <mxCell id="s1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#4499DD;strokeWidth=3;endArrow=classic;exitX=1;exitY=0.15;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="gold" target="warehouse">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1310" y="383" /><mxPoint x="1310" y="205" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="s2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#4499DD;strokeWidth=3;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="gold" target="lakehouse">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1320" y="415" /><mxPoint x="1320" y="395" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="s3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#BB88DD;strokeWidth=3;endArrow=classic;exitX=1;exitY=0.85;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="gold" target="semantic">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1310" y="447" /><mxPoint x="1310" y="495" /></Array></mxGeometry>
+        </mxCell>
+
+        <!-- Silver → ML: exits BOTTOM, routes below medallion to clear gold completely -->
+        <mxCell id="s4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#00BCF2;strokeWidth=3;endArrow=classic;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="silver" target="ml-model">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1065" y="555" /><mxPoint x="1310" y="555" /><mxPoint x="1310" y="635" /></Array></mxGeometry>
+        </mxCell>
+
+        <!-- KQL → RTI eventstream -->
+        <mxCell id="s5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#FF8C42;strokeWidth=3;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="kqldb" target="rti-set">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1310" y="875" /></Array></mxGeometry>
+        </mxCell>
+
+        <!-- Warehouse → Marts -->
+        <mxCell id="s6" style="edgeStyle=none;html=1;strokeColor=#4499DD;strokeWidth=2;endArrow=classic;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="warehouse" target="marts"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== SERVE → CONSUMERS (waypoints in 1540→1610 gap) ===== -->
+        <mxCell id="c1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#9B7BC2;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="warehouse" target="cons-analyst"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#F2C811;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="marts" target="cons-pbi"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c2b" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#F2C811;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.85;entryDx=0;entryDy=0;" edge="1" parent="1" source="semantic" target="cons-pbi">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1570" y="478" /><mxPoint x="1570" y="324" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="c3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#4499DD;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="lakehouse" target="cons-copilot"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c3b" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#BB88DD;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;" edge="1" parent="1" source="semantic" target="cons-apps">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1585" y="513" /><mxPoint x="1585" y="478" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="c4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#6688BB;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.8;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" edge="1" parent="1" source="lakehouse" target="cons-apps">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1575" y="416" /><mxPoint x="1575" y="513" /></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="c5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#88DDEE;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="ml-model" target="cons-ds"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#FF8C42;strokeWidth=2;endArrow=classic;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="rti-set" target="cons-rtd"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== REPO MODULES BAND ===== -->
+        <mxCell id="repo-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a0d3e;strokeColor=#6644AA;strokeWidth=2;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1060" width="1800" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-title" value="REPO MODULES  —  msft-fabric-utils  &amp;  parent-directory utilities" style="text;html=1;align=left;verticalAlign=middle;fontColor=#AA88DD;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1068" width="900" height="22" as="geometry" />
+        </mxCell>
+
+        <mxCell id="repo-col1" value="DATA SOURCES&#10;(external systems)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d1b3e;strokeColor=#1565C0;fontColor=#88BBEE;fontSize=11;fontStyle=1;verticalAlign=top;align=center;spacingTop=6;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1095" width="320" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-col1-body" value="• Out of scope&#10;• Connect via mirroring,&#10;  shortcuts, or RTI" style="text;html=1;align=left;verticalAlign=top;fontColor=#CCCCDD;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="84" y="1145" width="290" height="125" as="geometry" />
+        </mxCell>
+
+        <mxCell id="repo-col2" value="INGEST &amp; CI/CD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2e0d1a;strokeColor=#C62828;fontColor=#DD8888;fontSize=11;fontStyle=1;verticalAlign=top;align=center;spacingTop=6;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="400" y="1095" width="220" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-col2-body" value="• fabric-cicd/&#10;• fabric-sdlc-governance/&#10;  ado-pipelines/&#10;  - pipeline-de.yml&#10;  - pipeline-analytics.yml&#10;  - pipeline-reporting.yml&#10;• scripts/fabric_deploy.py" style="text;html=1;align=left;verticalAlign=top;fontColor=#CCCCDD;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="412" y="1130" width="200" height="145" as="geometry" />
+        </mxCell>
+
+        <mxCell id="repo-col3" value="ONELAKE  /  MEDALLION  —  operational notebooks &amp; security" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a0d2e;strokeColor=#7B1FA2;fontColor=#BB88DD;fontSize=11;fontStyle=1;verticalAlign=top;align=center;spacingTop=6;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="650" y="1095" width="640" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-col3-body-1" value="notebooks/&#10;• fabric-warehouse-lakehouse-metrics.ipynb&#10;• fabric-warehouse-performance-softdelete.ipynb&#10;• fabric-notebook-pipeline-efficiency.ipynb&#10;• fabric-spark-monitoring-setup.ipynb&#10;• OneLakeStorageSize.ipynb" style="text;html=1;align=left;verticalAlign=top;fontColor=#CCCCDD;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="662" y="1130" width="310" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-col3-body-2" value="• fabric-onelake-security/  (OneLake RBAC)&#10;• fabric-region-migration/  (capacity inventory)&#10;• fabric-data-agent-governance/  (agent guardrails)&#10;• azure-resource-inventory/  (subscription inventory)&#10;• scripts/python  +  scripts/powershell" style="text;html=1;align=left;verticalAlign=top;fontColor=#CCCCDD;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="978" y="1130" width="300" height="140" as="geometry" />
+        </mxCell>
+
+        <mxCell id="repo-col4" value="SERVE  /  GOVERNANCE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d1a2e;strokeColor=#283593;fontColor=#6688BB;fontSize=11;fontStyle=1;verticalAlign=top;align=center;spacingTop=6;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="1095" width="240" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-col4-body" value="fabric-sdlc-governance/&#10;• contracts/ (gold, dictionary,&#10;  classifications, ontology)&#10;• scripts/purview_*.py&#10;• scripts/validate_*.py&#10;&#10;Parent dir:&#10;• msft-purview-fabric-data-map-dlp&#10;• purview-compliance-toolkit" style="text;html=1;align=left;verticalAlign=top;fontColor=#CCCCDD;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1332" y="1130" width="218" height="145" as="geometry" />
+        </mxCell>
+
+        <mxCell id="repo-col5" value="CONSUMPTION" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d2e1a;strokeColor=#2E7D32;fontColor=#66BB88;fontSize=11;fontStyle=1;verticalAlign=top;align=center;spacingTop=6;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="1590" y="1095" width="260" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-col5-body" value="• fabric-data-agent-governance/&#10;  (Foundry agents + Copilot)&#10;• aca-private-deployment/&#10;  (private LOB app hosting)&#10;&#10;Parent dir:&#10;• fabric-powerbi-themes&#10;• drawio-mcp-server&#10;• purview-dev-tools-mcp" style="text;html=1;align=left;verticalAlign=top;fontColor=#CCCCDD;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1602" y="1130" width="240" height="145" as="geometry" />
+        </mxCell>
+
+        <!-- ===== LEGEND ===== -->
+        <mxCell id="lg-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0d1a2e;strokeColor=#283593;strokeWidth=1;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="50" y="1305" width="1800" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="lg-title" value="LEGEND  —  COLOR-CODED FLOWS" style="text;html=1;align=left;fontColor=#6688BB;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1314" width="280" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lg-l1" style="endArrow=classic;html=1;strokeColor=#BB88DD;strokeWidth=4;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="70" y="1355" as="sourcePoint"/><mxPoint x="130" y="1355" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lg-t1" value="Open Mirroring  —  SaaS apps (Salesforce, Workday)" style="text;html=1;align=left;fontColor=#CCCCDD;fontSize=11;" vertex="1" parent="1"><mxGeometry x="140" y="1346" width="350" height="18" as="geometry"/></mxCell>
+
+        <mxCell id="lg-l2" style="endArrow=classic;html=1;strokeColor=#4499DD;strokeWidth=4;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="500" y="1355" as="sourcePoint"/><mxPoint x="560" y="1355" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lg-t2" value="Native Mirroring  —  Azure SQL, MI, Cosmos DB" style="text;html=1;align=left;fontColor=#CCCCDD;fontSize=11;" vertex="1" parent="1"><mxGeometry x="570" y="1346" width="330" height="18" as="geometry"/></mxCell>
+
+        <mxCell id="lg-l3" style="endArrow=classic;html=1;strokeColor=#55BB66;strokeWidth=4;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="910" y="1355" as="sourcePoint"/><mxPoint x="970" y="1355" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lg-t3" value="Shortcuts  —  AWS S3, RDS, PostgreSQL, ADLS" style="text;html=1;align=left;fontColor=#CCCCDD;fontSize=11;" vertex="1" parent="1"><mxGeometry x="980" y="1346" width="330" height="18" as="geometry"/></mxCell>
+
+        <mxCell id="lg-l4" style="endArrow=classic;html=1;strokeColor=#FF8C42;strokeWidth=4;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1320" y="1355" as="sourcePoint"/><mxPoint x="1380" y="1355" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lg-t4" value="Real-Time Intelligence  —  Event Hubs, IoT Hub" style="text;html=1;align=left;fontColor=#CCCCDD;fontSize=11;" vertex="1" parent="1"><mxGeometry x="1390" y="1346" width="330" height="18" as="geometry"/></mxCell>
+
+        <mxCell id="lg-l5" style="endArrow=classic;html=1;strokeColor=#FFD700;strokeWidth=3;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="70" y="1390" as="sourcePoint"/><mxPoint x="130" y="1390" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lg-t5" value="Medallion ELT  —  Data Factory: Bronze → Silver → Gold" style="text;html=1;align=left;fontColor=#CCCCDD;fontSize=11;" vertex="1" parent="1"><mxGeometry x="140" y="1381" width="350" height="18" as="geometry"/></mxCell>
+
+        <mxCell id="lg-l6" style="endArrow=classic;html=1;strokeColor=#F2C811;strokeWidth=3;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="500" y="1390" as="sourcePoint"/><mxPoint x="560" y="1390" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lg-t6" value="Semantic / BI serving  —  Direct Lake → Power BI" style="text;html=1;align=left;fontColor=#CCCCDD;fontSize=11;" vertex="1" parent="1"><mxGeometry x="570" y="1381" width="330" height="18" as="geometry"/></mxCell>
+
+        <mxCell id="lg-l7" style="endArrow=classic;html=1;strokeColor=#88DDEE;strokeWidth=3;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="910" y="1390" as="sourcePoint"/><mxPoint x="970" y="1390" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lg-t7" value="Data Science  —  Notebooks &amp; ML on Silver/Gold" style="text;html=1;align=left;fontColor=#CCCCDD;fontSize=11;" vertex="1" parent="1"><mxGeometry x="980" y="1381" width="330" height="18" as="geometry"/></mxCell>
+
+        <mxCell id="lg-l8" style="endArrow=none;html=1;strokeColor=#4499DD;strokeWidth=2;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1320" y="1390" as="sourcePoint"/><mxPoint x="1380" y="1390" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="lg-t8" value="Storage substrate (OneLake / Delta-Parquet)" style="text;html=1;align=left;fontColor=#CCCCDD;fontSize=11;" vertex="1" parent="1"><mxGeometry x="1390" y="1381" width="330" height="18" as="geometry"/></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

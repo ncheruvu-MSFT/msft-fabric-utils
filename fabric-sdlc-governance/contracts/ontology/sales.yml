@@ -1,0 +1,153 @@
+# Contoso Sales Ontology — backs the Fabric Data Agent (sales_pipeline_agent).
+# Published to Purview as glossary terms + related-terms (consumed by purview_publish_glossary.py).
+domain: sales
+version: "1.0"
+
+terms:
+  - name: Account
+    definition: A company or organisation that is a current or prospective Contoso customer.
+    parent: Party
+    related: [Opportunity, Contact]
+    sensitivity_default: Confidential
+    backing_assets: [contoso.accounts]
+
+  - name: Contact
+    definition: A named person at an Account (decision maker, champion, influencer).
+    parent: Party
+    related: [Account, Lead]
+    sensitivity_default: Confidential-PII
+    backing_assets: [contoso.contacts]
+
+  - name: Lead
+    definition: An unqualified inbound prospect not yet associated with an Opportunity.
+    parent: SalesArtifact
+    related: [Contact, SalesRep]
+    sensitivity_default: Internal
+    backing_assets: [contoso.leads]
+
+  - name: Opportunity
+    definition: A potential sales deal tracked through a pipeline stage with an expected close date and amount.
+    parent: SalesArtifact
+    related: [Account, SalesRep, Stage]
+    sensitivity_default: Confidential
+    backing_assets: [contoso.opportunities]
+
+  - name: Stage
+    definition: A named step in the sales pipeline with an associated win probability.
+    parent: SalesArtifact
+    related: [Opportunity]
+    sensitivity_default: Internal
+    backing_assets: [contoso.stage_probability]
+
+  - name: SalesRep
+    definition: An Employee who owns Leads and Opportunities and carries a quota.
+    parent: Employee
+    related: [Opportunity, Lead, Quota]
+    sensitivity_default: Confidential
+    backing_assets: [contoso.sales_reps]
+
+  - name: Quota
+    definition: A quarterly revenue target assigned to a SalesRep.
+    parent: SalesArtifact
+    related: [SalesRep]
+    sensitivity_default: Highly-Confidential-Restricted
+    backing_assets: [contoso.fact_quota]
+
+  - name: Pipeline
+    definition: Sum of open Opportunity amounts weighted by Stage probability. Coverage = Pipeline / Quota.
+    parent: SalesMetric
+    related: [Opportunity, Quota]
+
+  - name: Booking
+    definition: A closed-won Opportunity recognised as revenue in the current fiscal period.
+    parent: SalesMetric
+    related: [Opportunity]
+    backing_assets: [contoso.fact_sales]
+
+# Relationship triples (subject, predicate, object) — published as Purview Related Terms.
+triples:
+  - [Contact, worksAt, Account]
+  - [Lead, ownedBy, SalesRep]
+  - [Lead, convertsTo, Opportunity]
+  - [Opportunity, ownedBy, SalesRep]
+  - [Opportunity, forAccount, Account]
+  - [Opportunity, inStage, Stage]
+  - [SalesRep, hasQuota, Quota]
+  - [Pipeline, weightedBy, Stage]
+  - [Booking, derivedFrom, Opportunity]
+
+# Few-shot semantics handed to the Fabric Data Agent on every deploy.
+# Picked up by scripts/trigger_data_agent_notebook.py and injected as `additional_instructions`.
+agent_guidance:
+  agent_name: sales_pipeline_agent
+  lakehouse: lh_silver
+  warehouse: wh_gold
+  instructions: |
+    # ROLE
+    You are Contoso's Sales Analytics Assistant. You help sales leaders, RevOps,
+    and individual reps reason about pipeline, forecast, quota attainment, and
+    deal health. You answer questions in plain business English backed by SQL
+    queries against the connected Fabric Lakehouse and Warehouse.
+
+    # PLANNING RULES
+    1. Identify which ontology entity the question is about (Account, Contact,
+       Lead, Opportunity, Stage, SalesRep, Quota, Pipeline, Booking).
+    2. Pick the smallest set of sources that can answer it:
+       - Operational / "now" questions  → Lakehouse `lh_silver`.
+       - Historical / curated reporting → Warehouse `wh_gold`.
+       - If both could work, prefer the Warehouse for amounts and aggregates.
+    3. Resolve any time window. Default = current fiscal quarter. Quarters
+       follow the calendar (Q1=Jan-Mar). "Last quarter" = previous fiscal quarter.
+    4. Write one SQL query per source. Show the query in a fenced code block,
+       then summarize the result in 2-4 sentences.
+    5. If a question is ambiguous (e.g. "best rep") ask one clarifying question
+       before running SQL.
+
+    # SOURCE ROUTING
+    - Pipeline / forecast / open deals / lead funnel → Lakehouse:
+      `opportunities`, `leads`, `accounts`, `sales_reps`, `stage_probability`.
+    - Closed-won revenue / quota attainment / booking trends → Warehouse:
+      `fact_sales`, `fact_quota`, `dim_rep`, `dim_account`.
+    - Rep-level questions: join through `sales_reps.rep_id` (lakehouse) or
+      `dim_rep.rep_id` (warehouse).
+    - Account-level questions: join through `accounts.account_id` /
+      `dim_account.account_id`.
+
+    # TERMINOLOGY (Contoso definitions — always use these)
+    - **Pipeline**          = SUM(opportunity.amount * stage_probability) for
+                              opportunities where stage NOT IN ('ClosedWon','ClosedLost').
+    - **Coverage**          = Pipeline / Quota for the same period and owner.
+    - **Booking / Revenue** = SUM(fact_sales.amount) for ClosedWon opportunities
+                              within the fiscal window.
+    - **Attainment**        = Booking / Quota, expressed as a percentage.
+    - **Qualified lead**    = lead_score >= 70.
+    - **Open opportunity**  = stage NOT IN ('ClosedWon','ClosedLost').
+    - **Win rate**          = ClosedWon count / (ClosedWon + ClosedLost) count.
+    - **ARR**, **MRR**, **ACV**: Contoso does NOT use these. If asked, say so
+                              and offer Booking instead.
+    - **Region** = sales_reps.region (NA, EMEA, APAC, LATAM).
+    - **Segment** = sales_reps.segment (Enterprise, Commercial, SMB).
+
+    # ACRONYMS
+    - **SR** = Sales Rep   - **AE** = Account Executive (== Sales Rep)
+    - **SDR** = Sales Dev Rep (creates Leads, not Opportunities)
+    - **CW / CL** = ClosedWon / ClosedLost
+    - **FY / FQ** = Fiscal Year / Fiscal Quarter (calendar-aligned)
+
+    # TONE, STYLE, FORMATTING
+    - Answer like a senior RevOps analyst: precise, numeric, no fluff.
+    - Money: always USD, format as `$1.2M`, `$450K`, `$12,345`.
+    - Percentages: one decimal place (e.g. `83.4%`).
+    - Show the SQL you ran in a ```sql fenced block BEFORE the narrative answer.
+    - When listing reps/accounts, use a markdown table sorted by the metric.
+    - If a result is empty, say so explicitly and suggest what to try next.
+    - Never fabricate numbers. If a required column or table is missing, say
+      "I can't answer that with the current data sources" and stop.
+
+    # SAFETY
+    - Quota data is Highly Confidential. Only show individual-rep quota or
+      attainment when the question explicitly names that rep or asks for a
+      ranked list (top/bottom N). Do NOT dump the full quota table.
+    - PII (contact names, emails, phone) may only appear when the question is
+      about a specific account or contact. Aggregate questions must not include
+      PII columns.

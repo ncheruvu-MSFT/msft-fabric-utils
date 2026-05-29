@@ -1,0 +1,20 @@
+dataset: contoso.orders
+description: Transactional order header
+owner: data-stewards@contoso.com
+tier: silver
+sensitivity_default: Internal
+columns:
+  - name: order_id
+    type: int
+    classifications: [PrimaryKey]
+  - name: customer_id
+    type: int
+    description: FK customers.customer_id
+    classifications: [ForeignKey]
+  - name: order_ts
+    type: timestamp
+  - name: channel
+    type: string
+  - name: total_usd
+    type: decimal
+    sensitivity: Internal

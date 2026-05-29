@@ -1,0 +1,108 @@
+# ============================================================
+# Fabric DE Pipeline — Build → Dev → Test → Prod with approvals
+# ============================================================
+name: Fabric-DE-$(Date:yyyyMMdd)-$(Rev:r)
+
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include: [fabric/de/**, contracts/**, scripts/**, ado-pipelines/**]
+
+pr:
+  branches: { include: [main] }
+
+variables:
+  - group: fabric-shared
+
+stages:
+# ─── CI / Validate ─────────────────────────────────────────
+- stage: Build
+  displayName: 'Build & Validate'
+  jobs:
+    - job: validate
+      pool: { vmImage: 'ubuntu-latest' }
+      steps:
+        - checkout: self
+        - template: templates/validate-artifacts.yml
+
+# ─── DEV (auto) ────────────────────────────────────────────
+- stage: DeployDev
+  displayName: 'Deploy → Dev'
+  dependsOn: Build
+  condition: succeeded()
+  variables:
+    - group: fabric-dev
+  jobs:
+    - deployment: deploy_dev
+      environment: fabric-dev
+      pool: { vmImage: 'ubuntu-latest' }
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: templates/capacity-control.yml
+                parameters: { action: resume }
+              - template: templates/deploy-with-fabric-cicd.yml
+                parameters: { itemsPath: 'fabric/de' }
+              - script: python scripts/load_sample_data.py --workspace "$(FABRIC_WORKSPACE_NAME)" --lakehouse "$(LAKEHOUSE_NAME)"
+                displayName: 'Load Contoso sample data'
+              - template: templates/setup-mirroring-governance.yml
+                parameters: { env: dev }
+              - template: templates/trigger-purview-scan.yml
+                parameters: { collection: '$(PURVIEW_COLLECTION)' }
+
+# ─── TEST (approval) ───────────────────────────────────────
+- stage: DeployTest
+  displayName: 'Deploy → Test (approval)'
+  dependsOn: DeployDev
+  condition: succeeded()
+  variables:
+    - group: fabric-test
+  jobs:
+    - deployment: deploy_test
+      environment: fabric-test
+      pool: { vmImage: 'ubuntu-latest' }
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: templates/capacity-control.yml
+                parameters: { action: resume }
+              - template: templates/deploy-with-fabric-cicd.yml
+                parameters: { itemsPath: 'fabric/de' }
+              - script: python scripts/run_integration_tests.py --env test
+                displayName: 'Integration + DQ tests'
+              - template: templates/setup-mirroring-governance.yml
+                parameters: { env: test }
+              - template: templates/trigger-purview-scan.yml
+                parameters: { collection: '$(PURVIEW_COLLECTION)' }
+
+# ─── PROD (approval) ───────────────────────────────────────
+- stage: DeployProd
+  displayName: 'Deploy → Prod (approval)'
+  dependsOn: DeployTest
+  condition: succeeded()
+  variables:
+    - group: fabric-prod
+  jobs:
+    - deployment: deploy_prod
+      environment: fabric-prod
+      pool: { vmImage: 'ubuntu-latest' }
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - checkout: self
+              - template: templates/capacity-control.yml
+                parameters: { action: resume }
+              - template: templates/deploy-with-fabric-cicd.yml
+                parameters: { itemsPath: 'fabric/de' }
+              - template: templates/setup-mirroring-governance.yml
+                parameters: { env: prod }
+              - template: templates/trigger-purview-scan.yml
+                parameters: { collection: '$(PURVIEW_COLLECTION)' }
+              - script: python scripts/purview_enforce_dlp.py
+                displayName: 'Verify DLP policy active on Confidential-PII assets'
