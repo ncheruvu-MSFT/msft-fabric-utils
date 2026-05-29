@@ -38,6 +38,50 @@ def resolve_item_id(ws_id: str, name: str, item_type: str = "Notebook") -> str:
             return it["id"]
     sys.exit(f"{item_type} not found in workspace: {name}")
 
+
+def ensure_notebook(ws_id: str, name: str, ipynb_path: pathlib.Path) -> str:
+    """Return notebook id; import from local .ipynb if missing."""
+    import base64
+    r = requests.get(f"{FABRIC}/workspaces/{ws_id}/items?type=Notebook", headers=headers())
+    r.raise_for_status()
+    for it in r.json().get("value", []):
+        if it["displayName"] == name:
+            return it["id"]
+    if not ipynb_path.exists():
+        sys.exit(f"notebook missing in workspace and local file not found: {ipynb_path}")
+    print(f"  importing notebook from {ipynb_path}")
+    payload = base64.b64encode(ipynb_path.read_bytes()).decode("ascii")
+    body = {
+        "displayName": name,
+        "definition": {
+            "format": "ipynb",
+            "parts": [
+                {"path": "notebook-content.ipynb", "payload": payload, "payloadType": "InlineBase64"}
+            ],
+        },
+    }
+    r = requests.post(f"{FABRIC}/workspaces/{ws_id}/notebooks",
+                      headers=headers(), data=json.dumps(body))
+    if r.status_code in (200, 201):
+        return r.json()["id"]
+    if r.status_code == 202:
+        # Long-running create — poll Location for completed item
+        loc = r.headers.get("Location")
+        if not loc:
+            sys.exit(f"notebook create 202 with no Location header")
+        for _ in range(60):
+            time.sleep(5)
+            rr = requests.get(loc, headers=headers())
+            if rr.status_code == 200 and rr.json().get("status") == "Succeeded":
+                # Refetch items to grab id
+                r2 = requests.get(f"{FABRIC}/workspaces/{ws_id}/items?type=Notebook", headers=headers())
+                for it in r2.json().get("value", []):
+                    if it["displayName"] == name:
+                        return it["id"]
+        sys.exit("notebook create timed out")
+    sys.exit(f"notebook create failed {r.status_code}: {r.text}")
+
+
 def run_notebook(ws_id: str, nb_id: str, params: dict | None = None) -> str:
     """Returns job instance URL (poll until Completed)."""
     body = {"executionData": {"parameters": params or {}}}
@@ -80,11 +124,13 @@ def main():
     ap.add_argument("--workspace", required=True)
     ap.add_argument("--notebook",  default="fabric-data-agent-sales-demo")
     ap.add_argument("--ontology",  default="contracts/ontology/sales.yml")
+    ap.add_argument("--ipynb",     default="fabric-sdlc-governance/notebook/fabric-data-agent-sales-demo.ipynb",
+                    help="Local .ipynb to import if the notebook is missing in the workspace.")
     ap.add_argument("--timeout",   type=int, default=1800)
     args = ap.parse_args()
 
     ws_id = resolve_workspace_id(args.workspace)
-    nb_id = resolve_item_id(ws_id, args.notebook, "Notebook")
+    nb_id = ensure_notebook(ws_id, args.notebook, pathlib.Path(args.ipynb))
     print(f"workspace={args.workspace} ({ws_id})")
     print(f"notebook ={args.notebook} ({nb_id})")
 
