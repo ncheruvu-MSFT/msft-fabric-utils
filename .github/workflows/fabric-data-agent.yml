@@ -35,9 +35,9 @@ permissions:
   contents: read
 
 env:
-  WORKSPACE_DEV:   'Fabric Demo - Sales'
-  WORKSPACE_TEST:  'fabric-sales-test'
-  WORKSPACE_PROD:  'fabric-sales-prod'
+  WORKSPACE_DEV:   'fabric-de-dev'
+  WORKSPACE_TEST:  'fabric-de-test'
+  WORKSPACE_PROD:  'fabric-de-prod'
   LAKEHOUSE_NAME:  'lh_silver'
   NOTEBOOK_NAME:   'fabric-data-agent-sales-demo'
   ONTOLOGY_FILE:   'fabric-sdlc-governance/contracts/ontology/sales.yml'
