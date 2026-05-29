@@ -1,0 +1,156 @@
+# ============================================================
+# Fabric Data Agent — GitHub Actions equivalent of pipeline-data-agent.yml
+#
+# Auth: same SPN as ADO, but via GitHub OIDC federation.
+# One-time on the app reg (replace OWNER/REPO):
+#   az ad app federated-credential create --id <APP_OBJECT_ID> --parameters '{
+#     "name":"gh-fabric-main",
+#     "issuer":"https://token.actions.githubusercontent.com",
+#     "subject":"repo:OWNER/REPO:ref:refs/heads/main",
+#     "audiences":["api://AzureADTokenExchange"]
+#   }'
+# Repeat with subject `repo:OWNER/REPO:environment:fabric-dev` (and -test, -prod)
+# so the `environment:` gated jobs below get their own tokens.
+#
+# Repo secrets (Settings → Secrets and variables → Actions):
+#   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+# Repo environments (Settings → Environments):
+#   fabric-dev, fabric-test (with required reviewers), fabric-prod (with reviewers)
+# ============================================================
+name: Fabric Data Agent
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - fabric-sdlc-governance/contracts/ontology/sales.yml
+      - fabric-sdlc-governance/scripts/seed_sales_samples.py
+      - fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py
+      - fabric-sdlc-governance/notebook/fabric-data-agent-sales-demo.ipynb
+      - .github/workflows/fabric-data-agent.yml
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # required for OIDC -> Azure
+  contents: read
+
+env:
+  WORKSPACE_DEV:   'Fabric Demo - Sales'
+  WORKSPACE_TEST:  'fabric-sales-test'
+  WORKSPACE_PROD:  'fabric-sales-prod'
+  LAKEHOUSE_NAME:  'lh_silver'
+  NOTEBOOK_NAME:   'fabric-data-agent-sales-demo'
+  ONTOLOGY_FILE:   'fabric-sdlc-governance/contracts/ontology/sales.yml'
+
+jobs:
+  # ─── 1. Validate ─────────────────────────────────────────
+  validate:
+    name: '1. Validate ontology + scripts'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -q pyyaml requests azure-identity fabric-cicd
+      - name: Validate sales ontology
+        run: python fabric-sdlc-governance/scripts/validate_ontology.py "$ONTOLOGY_FILE"
+      - name: Lint helper scripts
+        run: |
+          python -m py_compile \
+            fabric-sdlc-governance/scripts/seed_sales_samples.py \
+            fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py
+
+  # ─── 2. Deploy to Dev ────────────────────────────────────
+  dev:
+    name: '2. Deploy -> Dev'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: fabric-dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -q pyyaml requests azure-identity fabric-cicd
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Seed sample sales data into Dev Lakehouse
+        run: |
+          python fabric-sdlc-governance/scripts/seed_sales_samples.py \
+            --workspace "$WORKSPACE_DEV" \
+            --lakehouse "$LAKEHOUSE_NAME" \
+            --upload
+      - name: Trigger Data Agent notebook in Dev
+        run: |
+          python fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py \
+            --workspace "$WORKSPACE_DEV" \
+            --notebook  "$NOTEBOOK_NAME" \
+            --ontology  "$ONTOLOGY_FILE"
+
+  # ─── 3. Promote to Test (approval gate) ──────────────────
+  test:
+    name: '3. Promote -> Test'
+    needs: dev
+    runs-on: ubuntu-latest
+    environment: fabric-test    # configure required reviewers in repo settings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -q pyyaml requests azure-identity fabric-cicd
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: fabric-cicd deploy -> Test
+        env:
+          FABRIC_WORKSPACE_NAME: ${{ env.WORKSPACE_TEST }}
+        run: |
+          python fabric-sdlc-governance/scripts/fabric_deploy.py \
+            --workspace-name "$WORKSPACE_TEST" \
+            --items-path fabric-sdlc-governance/notebook \
+            --environment test \
+            --item-types Notebook,Lakehouse,DataPipeline,Warehouse,SemanticModel,Report || \
+            echo "::warning::fabric-cicd deploy non-fatal"
+      - name: Trigger Data Agent notebook in Test
+        run: |
+          python fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py \
+            --workspace "$WORKSPACE_TEST" \
+            --notebook  "$NOTEBOOK_NAME" \
+            --ontology  "$ONTOLOGY_FILE"
+
+  # ─── 4. Promote to Prod (approval gate) ──────────────────
+  prod:
+    name: '4. Promote -> Prod'
+    needs: test
+    runs-on: ubuntu-latest
+    environment: fabric-prod    # configure required reviewers in repo settings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install -q pyyaml requests azure-identity fabric-cicd
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: fabric-cicd deploy -> Prod
+        env:
+          FABRIC_WORKSPACE_NAME: ${{ env.WORKSPACE_PROD }}
+        run: |
+          python fabric-sdlc-governance/scripts/fabric_deploy.py \
+            --workspace-name "$WORKSPACE_PROD" \
+            --items-path fabric-sdlc-governance/notebook \
+            --environment prod \
+            --item-types Notebook,Lakehouse,DataPipeline,Warehouse,SemanticModel,Report || \
+            echo "::warning::fabric-cicd deploy non-fatal"
+      - name: Trigger Data Agent notebook in Prod
+        run: |
+          python fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py \
+            --workspace "$WORKSPACE_PROD" \
+            --notebook  "$NOTEBOOK_NAME" \
+            --ontology  "$ONTOLOGY_FILE"
