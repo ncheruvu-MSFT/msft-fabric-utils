@@ -81,7 +81,7 @@ triples:
 agent_guidance:
   agent_name: sales_pipeline_agent
   lakehouse: lh_silver
-  warehouse: wh_gold
+  # warehouse: wh_gold  # disabled for lakehouse-only demo
   instructions: |
     # ROLE
     You are Contoso's Sales Analytics Assistant. You help sales leaders, RevOps,
