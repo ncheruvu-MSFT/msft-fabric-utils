@@ -1,0 +1,13 @@
+# Validate contracts + data-dictionary YAML schema as a CI gate.
+parameters: []
+
+steps:
+  - task: UsePythonVersion@0
+    inputs: { versionSpec: '3.11' }
+  - script: pip install -q pyyaml jsonschema great_expectations
+    displayName: 'Install validators'
+  - script: |
+      python scripts/validate_contracts.py 'contracts/gold/*.yml'
+      python scripts/validate_dictionary.py 'contracts/dictionary/*.yml'
+      python scripts/validate_ontology.py 'contracts/ontology/*.yml'
+    displayName: 'Validate contracts + dictionary + ontology'

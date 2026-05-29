@@ -1,0 +1,19 @@
+dataset: contoso.order_items
+description: Line items per order
+owner: data-stewards@contoso.com
+tier: silver
+sensitivity_default: Internal
+columns:
+  - name: order_item_id
+    type: int
+    classifications: [PrimaryKey]
+  - name: order_id
+    type: int
+    classifications: [ForeignKey]
+  - name: product_id
+    type: int
+    classifications: [ForeignKey]
+  - name: qty
+    type: int
+  - name: unit_price
+    type: decimal

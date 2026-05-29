@@ -25,3 +25,21 @@ Thumbs.db
 # Output
 *.csv
 *.parquet
+
+# Certificates / secrets
+*.pem
+*.pfx
+*.key
+
+# Backup of ADO inner git dir (kept locally for ADO sync)
+fabric-sdlc-governance/_git_ado_backup/
+
+fabric-sdlc-governance/.sources.env
+fabric-sdlc-governance/.run.log
+fabric-sdlc-governance/.bulk.log
+fabric-sdlc-governance/out_alldomains.txt
+fabric-sdlc-governance/*.log
+
+fabric-cicd/.bulk.log
+fabric-cicd/*.log
+

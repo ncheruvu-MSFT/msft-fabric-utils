@@ -1,0 +1,18 @@
+dataset: contoso.products
+description: Product catalogue (non-sensitive)
+owner: catalog-team@contoso.com
+tier: silver
+sensitivity_default: Public
+columns:
+  - name: product_id
+    type: int
+    classifications: [PrimaryKey]
+  - name: sku
+    type: string
+    description: Stock keeping unit
+  - name: name
+    type: string
+  - name: category
+    type: string
+  - name: unit_price
+    type: decimal

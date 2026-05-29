@@ -1,0 +1,17 @@
+# Reusable: 'fab auth login' using ADO Workload Identity Federation.
+# Use after install-fabric-tools.yml when a step needs the `fab` CLI directly.
+# Caller supplies the service connection name via $(AZURE_SERVICE_CONNECTION).
+steps:
+  - task: AzureCLI@2
+    displayName: 'fab auth login (WIF)'
+    inputs:
+      azureSubscription: $(AZURE_SERVICE_CONNECTION)
+      scriptType: pscore
+      scriptLocation: inlineScript
+      addSpnToEnvironment: true
+      inlineScript: |
+        fab auth login `
+          --tenant "$env:tenantId" `
+          --service-principal `
+          --client-id "$env:servicePrincipalId" `
+          --federated-token "$env:idToken"

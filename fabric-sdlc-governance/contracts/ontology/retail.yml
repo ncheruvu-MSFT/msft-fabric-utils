@@ -1,0 +1,57 @@
+# Contoso Retail Ontology — published to Purview as glossary terms + related-terms
+domain: retail
+version: "1.0"
+terms:
+  - name: Customer
+    definition: An individual who has signed up for a Contoso loyalty account.
+    parent: Party
+    related: [Order, LoyaltyProgram]
+    sensitivity_default: Confidential-PII
+    backing_assets: [contoso.customers]
+
+  - name: Employee
+    definition: Internal Contoso workforce member with HR record.
+    parent: Party
+    related: [Department, Manager]
+    sensitivity_default: Highly-Confidential-Restricted
+    backing_assets: [contoso.employees]
+
+  - name: Product
+    definition: A sellable SKU offered through Contoso channels.
+    parent: CatalogueItem
+    related: [Order, Category]
+    sensitivity_default: Public
+    backing_assets: [contoso.products]
+
+  - name: Order
+    definition: A purchase transaction placed by a Customer for one or more Products.
+    parent: Transaction
+    related: [Customer, OrderLine]
+    sensitivity_default: Internal
+    backing_assets: [contoso.orders]
+
+  - name: OrderLine
+    definition: One Product entry within an Order.
+    parent: Transaction
+    related: [Order, Product]
+    sensitivity_default: Internal
+    backing_assets: [contoso.order_items]
+
+  - name: LoyaltyProgram
+    definition: Contoso customer rewards programme; each Customer has at most one LoyaltyID.
+    parent: BusinessProgram
+    related: [Customer]
+
+  - name: Department
+    definition: Organisational unit; each Employee belongs to exactly one.
+    parent: OrgUnit
+    related: [Employee]
+
+# Relationship triples (subject, predicate, object) — published as Related Terms
+triples:
+  - [Customer, placesA, Order]
+  - [Order, contains, OrderLine]
+  - [OrderLine, refersTo, Product]
+  - [Customer, enrolledIn, LoyaltyProgram]
+  - [Employee, memberOf, Department]
+  - [Employee, managedBy, Employee]

@@ -1,0 +1,65 @@
+# GitHub Actions mirror of the ADO DE pipeline.
+# Rename this folder to ".github/workflows/" to enable.
+name: Fabric-DE-CICD
+
+on:
+  push:
+    branches: [dev, test, main]
+    paths: ['fabric/de/**', 'contracts/**', 'scripts/**']
+  pull_request:
+    branches: [dev, test, main]
+
+permissions:
+  id-token: write       # OIDC federation to Entra
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install fabric-cicd ms-fabric-cli ruff pytest pyyaml requests azure-identity
+      - run: pytest tests/ -q
+
+  deploy:
+    needs: ci
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'prod' || (github.ref_name == 'test' && 'test' || 'dev') }}
+    env:
+      AZURE_TENANT_ID:    ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_CLIENT_ID:    ${{ secrets.AZURE_CLIENT_ID }}    # OIDC, no secret value
+      TARGET_WORKSPACE_ID: ${{ vars.TARGET_WORKSPACE_ID }}
+      ENVIRONMENT:        ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - run: pip install fabric-cicd pyyaml requests azure-identity
+      - run: |
+          python - <<'PY'
+          import os
+          from fabric_cicd import FabricWorkspace, publish_all_items, unpublish_all_orphan_items
+          ws = FabricWorkspace(
+              workspace_id=os.environ["TARGET_WORKSPACE_ID"],
+              repository_directory="fabric/de",
+              item_type_in_scope=["Notebook", "Lakehouse", "DataPipeline", "Warehouse"],
+              environment=os.environ["ENVIRONMENT"],
+          )
+          publish_all_items(ws)
+          unpublish_all_orphan_items(ws)
+          PY
+      - if: github.ref_name == 'main'
+        run: python scripts/purview_fabric_governance.py
+        env:
+          PURVIEW_ACCOUNT: ${{ vars.PURVIEW_ACCOUNT }}
+          PURVIEW_COLLECTION_ID: ${{ vars.PURVIEW_COLLECTION_ID }}
+          FABRIC_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}

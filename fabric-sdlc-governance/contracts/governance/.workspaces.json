@@ -1,0 +1,26 @@
+{
+  "dev": {
+    "name": "fabric-de-dev",
+    "id": "2accb869-d5c3-4b89-8d8c-2dcd85576871",
+    "lakehouses": {
+      "lh_silver": "aa23aeb0-8ce5-4124-a6c4-fa115b4270cf",
+      "lh_gold": "dd392ac9-1c37-42d7-b779-6b13215993fa"
+    }
+  },
+  "test": {
+    "name": "fabric-de-test",
+    "id": "bbf5a506-aab0-4039-b4dc-9290998e1bc6",
+    "lakehouses": {
+      "lh_silver": "cec23fd6-110c-4b3f-a202-4941e78b8b5b",
+      "lh_gold": "fe6def8e-932d-432a-8628-2425da418c6f"
+    }
+  },
+  "prod": {
+    "name": "fabric-de-prod",
+    "id": "12883e81-4880-4164-a96d-e5ba5ef50a6f",
+    "lakehouses": {
+      "lh_silver": "7146d0ad-ae92-4ce9-a3dc-576de61b4614",
+      "lh_gold": "73c71816-eace-4c98-ab1d-e62d0ca488ec"
+    }
+  }
+}

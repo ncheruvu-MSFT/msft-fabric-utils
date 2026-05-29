@@ -1,0 +1,1 @@
+az deployment operation group list -g ng-fabric-sources-cc -n sources --query "[].{r:properties.targetResource.resourceName,t:properties.targetResource.resourceType,s:properties.provisioningState,err:properties.statusMessage.error.message}" -o json

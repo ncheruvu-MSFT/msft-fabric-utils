@@ -1,0 +1,200 @@
+# ============================================================
+# Fabric DE — Bulk Export/Import demo with approval gates
+# ------------------------------------------------------------
+# Self-contained pipeline for demonstrating the SDLC promotion
+# pattern (Dev -> Test -> Prod) with manual approvals on the
+# Test and Prod environments, a published artifact between
+# stages (the "bulk export bundle"), and a Markdown status
+# report attached to the build summary.
+#
+# No live Fabric calls — every step is shell/python so the run
+# always succeeds and is safe to demo.
+# ============================================================
+name: Fabric-DE-Demo-$(Date:yyyyMMdd)-$(Rev:r)
+
+trigger: none           # demo pipeline — run on demand
+pr: none
+
+parameters:
+  - name: itemCount
+    displayName: 'Number of Fabric items in the demo bundle'
+    type: number
+    default: 12
+  - name: sourceWorkspace
+    displayName: 'Source (Dev) workspace name'
+    type: string
+    default: 'fabric-de-dev'
+
+variables:
+  bundleDir: '$(Build.ArtifactStagingDirectory)/bundle'
+  reportDir: '$(Build.ArtifactStagingDirectory)/report'
+
+stages:
+# ─── 1. Bulk EXPORT from Dev ───────────────────────────────
+- stage: ExportDev
+  displayName: '1. Bulk Export (Dev)'
+  jobs:
+    - job: export
+      pool: { vmImage: 'ubuntu-latest' }
+      steps:
+        - checkout: none
+
+        - bash: |
+            set -euo pipefail
+            mkdir -p "$(bundleDir)"
+            cat > "$(bundleDir)/manifest.json" <<EOF
+            {
+              "source_workspace": "${{ parameters.sourceWorkspace }}",
+              "exported_at_utc": "$(date -u +%FT%TZ)",
+              "build_id": "$(Build.BuildId)",
+              "item_count": ${{ parameters.itemCount }},
+              "items": [
+                {"name":"lh_bronze",      "type":"Lakehouse",       "id":"00000000-0000-0000-0000-000000000001"},
+                {"name":"lh_silver",      "type":"Lakehouse",       "id":"00000000-0000-0000-0000-000000000002"},
+                {"name":"lh_gold",        "type":"Lakehouse",       "id":"00000000-0000-0000-0000-000000000003"},
+                {"name":"wh_finance",     "type":"Warehouse",       "id":"00000000-0000-0000-0000-000000000004"},
+                {"name":"nb_ingest_sales","type":"Notebook",        "id":"00000000-0000-0000-0000-000000000005"},
+                {"name":"nb_curate_dim",  "type":"Notebook",        "id":"00000000-0000-0000-0000-000000000006"},
+                {"name":"nb_build_fact",  "type":"Notebook",        "id":"00000000-0000-0000-0000-000000000007"},
+                {"name":"pl_master_load", "type":"DataPipeline",    "id":"00000000-0000-0000-0000-000000000008"},
+                {"name":"sm_sales_star",  "type":"SemanticModel",   "id":"00000000-0000-0000-0000-000000000009"},
+                {"name":"rpt_sales_exec", "type":"Report",          "id":"00000000-0000-0000-0000-00000000000a"},
+                {"name":"env_de_runtime", "type":"Environment",     "id":"00000000-0000-0000-0000-00000000000b"},
+                {"name":"sj_nightly",     "type":"SparkJobDefn",    "id":"00000000-0000-0000-0000-00000000000c"}
+              ]
+            }
+            EOF
+            for i in $(seq 1 ${{ parameters.itemCount }}); do
+              echo "// demo item $i" > "$(bundleDir)/item_$i.json"
+            done
+            echo "Exported ${{ parameters.itemCount }} items from ${{ parameters.sourceWorkspace }}"
+            ls -la "$(bundleDir)"
+          displayName: 'Simulate bulk export from Dev workspace'
+
+        - publish: '$(bundleDir)'
+          artifact: 'fabric-bundle'
+          displayName: 'Publish export bundle artifact'
+
+# ─── 2. Bulk IMPORT to Test (approval) ─────────────────────
+- stage: ImportTest
+  displayName: '2. Import -> Test (approval)'
+  dependsOn: ExportDev
+  condition: succeeded()
+  jobs:
+    - deployment: import_test
+      environment: fabric-test        # approval gate lives on this environment
+      pool: { vmImage: 'ubuntu-latest' }
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - download: current
+                artifact: 'fabric-bundle'
+                displayName: 'Download export bundle'
+
+              - bash: |
+                  set -euo pipefail
+                  python3 - <<'PY'
+                  import json, pathlib, datetime
+                  src = pathlib.Path("$(Pipeline.Workspace)/fabric-bundle/manifest.json")
+                  m = json.loads(src.read_text())
+                  print(f"Importing {m['item_count']} items into fabric-de-test")
+                  for i, it in enumerate(m["items"], 1):
+                      print(f"  [{i:>2}/{m['item_count']}] {it['type']:<14} {it['name']}  -> remapped GUID")
+                  print("Import complete at", datetime.datetime.utcnow().isoformat() + "Z")
+                  PY
+                displayName: 'Simulate bulk import to Test'
+
+              - bash: |
+                  echo "Running smoke validation on Test workspace..."
+                  echo "  - Lakehouse tables reachable: OK"
+                  echo "  - Semantic model refresh:    OK"
+                  echo "  - Pipeline scheduled run:    OK"
+                displayName: 'Smoke validation'
+
+# ─── 3. Bulk IMPORT to Prod (approval) ─────────────────────
+- stage: ImportProd
+  displayName: '3. Import -> Prod (approval)'
+  dependsOn: ImportTest
+  condition: succeeded()
+  jobs:
+    - deployment: import_prod
+      environment: fabric-prod         # approval gate lives on this environment
+      pool: { vmImage: 'ubuntu-latest' }
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              - download: current
+                artifact: 'fabric-bundle'
+                displayName: 'Download export bundle'
+
+              - bash: |
+                  set -euo pipefail
+                  python3 - <<'PY'
+                  import json, pathlib, datetime
+                  m = json.loads(pathlib.Path("$(Pipeline.Workspace)/fabric-bundle/manifest.json").read_text())
+                  print(f"Importing {m['item_count']} items into fabric-de-prod")
+                  for it in m["items"]:
+                      print(f"  + {it['type']:<14} {it['name']}")
+                  print("Prod import complete at", datetime.datetime.utcnow().isoformat() + "Z")
+                  PY
+                displayName: 'Simulate bulk import to Prod'
+
+              - bash: |
+                  echo "Post-deploy checks on Prod..."
+                  echo "  - Capacity health:         OK"
+                  echo "  - DLP policy enforced:     OK"
+                  echo "  - Purview scan triggered:  OK"
+                displayName: 'Post-deploy checks'
+
+# ─── 4. Status report (attached to build summary) ──────────
+- stage: Report
+  displayName: '4. Status Report'
+  dependsOn:
+    - ExportDev
+    - ImportTest
+    - ImportProd
+  condition: always()
+  jobs:
+    - job: report
+      pool: { vmImage: 'ubuntu-latest' }
+      steps:
+        - download: current
+          artifact: 'fabric-bundle'
+          displayName: 'Download bundle for report'
+
+        - bash: |
+            set -euo pipefail
+            mkdir -p "$(reportDir)"
+            python3 - <<'PY'
+            import json, os, pathlib
+            m = json.loads(pathlib.Path("$(Pipeline.Workspace)/fabric-bundle/manifest.json").read_text())
+            out = pathlib.Path("$(reportDir)/summary.md")
+            rows = "\n".join(f"| {i['name']} | {i['type']} | `{i['id']}` |" for i in m["items"])
+            out.write_text(f"""# Fabric DE — Bulk Export/Import Demo
+
+            **Build:** $(Build.BuildNumber)  &nbsp; **Source workspace:** `{m['source_workspace']}`  &nbsp; **Exported at:** {m['exported_at_utc']}
+
+            ## Promotion result
+
+            | Stage | Environment | Result |
+            |---|---|---|
+            | 1. Export | Dev (`fabric-de-dev`) | ✅ Bundle of **{m['item_count']}** items published |
+            | 2. Import | Test (`fabric-de-test`) | ✅ Approved & deployed |
+            | 3. Import | Prod (`fabric-de-prod`) | ✅ Approved & deployed |
+
+            ## Items in bundle ({m['item_count']})
+
+            | Name | Type | Source GUID |
+            |---|---|---|
+            {rows}
+            """.replace("            ", ""))
+            print("Report written to", out)
+            PY
+            echo "##vso[task.uploadsummary]$(reportDir)/summary.md"
+          displayName: 'Render Markdown summary & attach to build'
+
+        - publish: '$(reportDir)'
+          artifact: 'status-report'
+          displayName: 'Publish status report artifact'

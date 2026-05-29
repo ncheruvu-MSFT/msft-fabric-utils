@@ -1,0 +1,66 @@
+# =============================================================================
+# Enterprise Glossary  (Purview Unified Catalog terms)
+# -----------------------------------------------------------------------------
+# Each entry becomes a glossary Term inside its target governance domain.
+#   `parent` lets you build a term hierarchy (e.g. Customer > Loyalty Customer).
+#   `related` builds peer "related-term" relationships.
+#   `acronyms`, `resources` are surfaced on the term page.
+#   `domain` MUST match a domain name from domains.yml (top-level OR sub).
+#
+# The script publishes one copy of each term per environment, attached to the
+# matching env-suffixed domain (Sales-DEV, Sales-TEST, Sales).
+# =============================================================================
+
+terms:
+
+  # ---- Sales / Retail ---------------------------------------------------
+  - name: Customer
+    domain: Sales
+    definition: An individual or organization that has purchased from Contoso.
+    acronyms: [CUST]
+    related: [Order, Loyalty Member]
+
+  - name: Loyalty Member
+    domain: Sales
+    parent: Customer
+    definition: Customer enrolled in the Contoso loyalty programme.
+
+  - name: Order
+    domain: Sales
+    definition: A confirmed purchase transaction containing one or more line items.
+    related: [Order Line, Customer]
+
+  - name: Order Line
+    domain: Sales
+    parent: Order
+    definition: A single product entry on an Order.
+
+  - name: Product
+    domain: Catalog
+    definition: A sellable SKU offered through any Contoso channel.
+
+  # ---- HR ---------------------------------------------------------------
+  - name: Employee
+    domain: People Operations
+    definition: Internal Contoso workforce member with an active HR record.
+    related: [Department]
+
+  - name: Department
+    domain: People Operations
+    definition: Organizational unit; every Employee belongs to exactly one.
+
+  - name: Compensation Package
+    domain: Compensation
+    definition: Total remuneration assigned to an Employee (base, bonus, equity).
+    related: [Employee]
+
+  # ---- Finance ----------------------------------------------------------
+  - name: Revenue
+    domain: Revenue
+    definition: Recognized income from delivered Orders, net of returns.
+    related: [Order]
+
+  # ---- Telemetry --------------------------------------------------------
+  - name: Page View
+    domain: Web Analytics
+    definition: A single page request emitted by the web client.

@@ -1,0 +1,41 @@
+# Reusable: provision sources + create mirrored DBs + Fabric items + Purview governance
+parameters:
+  - name: env
+    type: string
+
+steps:
+  - task: AzureCLI@2
+    displayName: 'Setup multi-source mirroring + governance'
+    inputs:
+      azureSubscription: 'azure-fabric-sso'
+      addSpnToEnvironment: true
+      scriptType: pscore
+      scriptLocation: inlineScript
+      inlineScript: |
+        $env:AZURE_CLIENT_ID=$env:servicePrincipalId
+        $env:AZURE_TENANT_ID=$env:tenantId
+        $env:AZURE_FEDERATED_TOKEN=$env:idToken
+        $env:AZURE_FEDERATED_TOKEN_FILE=(New-TemporaryFile).FullName
+        Set-Content -Path $env:AZURE_FEDERATED_TOKEN_FILE -Value $env:idToken
+
+        pip install -q azure-identity requests pyyaml azure-cosmos psycopg2-binary pyodbc
+        $env:FABRIC_WORKSPACE = "$(FABRIC_WORKSPACE_NAME)"
+        $env:PURVIEW_ACCOUNT = "$(PURVIEW_ACCOUNT)"
+
+        Write-Host "─── 1. Create mirrored databases ──────────"
+        python scripts/fabric_create_mirrored.py ${{ parameters.env }}
+
+        Write-Host "─── 2. Create Lakehouse / Warehouse / Agent ───"
+        python scripts/fabric_create_items.py ${{ parameters.env }}
+
+        Write-Host "─── 3. Purview governance domains ────────"
+        python scripts/purview_setup_domains.py
+
+        Write-Host "─── 4. Register sources + scan ───────────"
+        python scripts/purview_register_sources.py
+
+        Write-Host "─── 5. Self-service workflows ────────────"
+        python scripts/purview_setup_workflows.py
+
+        Write-Host "─── 6. Cross-source lineage ──────────────"
+        python scripts/lineage_demo.py

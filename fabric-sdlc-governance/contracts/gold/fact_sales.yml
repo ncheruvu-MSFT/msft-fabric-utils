@@ -1,0 +1,13 @@
+table: gold.fact_sales
+owner: data-engineering
+sla:
+  freshness_hours: 6
+  completeness_pct: 99.5
+columns:
+  - { name: sale_id,     type: bigint,         nullable: false, pk: true }
+  - { name: customer_id, type: bigint,         nullable: false, fk: gold.dim_customer }
+  - { name: amount,      type: decimal(18,2),  nullable: false, range: [0, 1000000] }
+  - { name: sale_ts,     type: timestamp,      nullable: false }
+expectations:
+  - row_count_min: 1000
+  - unique: [sale_id]

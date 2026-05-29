@@ -1,0 +1,43 @@
+# WIF-based deploy. fabric-cicd picks up token via AzureCLI's federated session.
+parameters:
+  - name: itemsPath
+    type: string
+  - name: itemTypes
+    type: object
+    default: ['Notebook', 'Lakehouse', 'DataPipeline', 'Warehouse', 'SemanticModel', 'Report']
+
+steps:
+  - task: UsePythonVersion@0
+    inputs: { versionSpec: '3.11' }
+
+  - script: pip install -q fabric-cicd azure-identity requests pyyaml
+    displayName: 'Install fabric-cicd + deps'
+
+  - task: AzureCLI@2
+    displayName: 'fabric-cicd deploy → $(FABRIC_WORKSPACE_NAME)'
+    inputs:
+      azureSubscription: $(AZURE_SERVICE_CONNECTION)
+      scriptType: pscore
+      scriptLocation: inlineScript
+      addSpnToEnvironment: true
+      inlineScript: |
+        $env:AZURE_TENANT_ID = "$env:tenantId"
+        $env:AZURE_CLIENT_ID = "$env:servicePrincipalId"
+        $env:AZURE_FEDERATED_TOKEN = "$env:idToken"
+        $env:AZURE_AUTHORITY_HOST = "https://login.microsoftonline.com/"
+        $itemsPath = "${{ parameters.itemsPath }}"
+        if (-not (Test-Path $itemsPath)) {
+          Write-Host "##vso[task.logissue type=warning]items path '$itemsPath' missing — creating placeholder for demo"
+          New-Item -ItemType Directory -Force -Path $itemsPath | Out-Null
+          "# placeholder so fabric-cicd has something to scan" | Out-File "$itemsPath/.placeholder"
+        }
+        python scripts/fabric_deploy.py `
+          --workspace-name "$(FABRIC_WORKSPACE_NAME)" `
+          --items-path "$itemsPath" `
+          --environment "$(Environment.Name)" `
+          --item-types "${{ join(',', parameters.itemTypes) }}"
+        if ($LASTEXITCODE -ne 0) {
+          Write-Host "##vso[task.logissue type=warning]fabric-cicd deploy non-fatal: exit $LASTEXITCODE"
+          Write-Host "##vso[task.complete result=SucceededWithIssues]Workspace '$(FABRIC_WORKSPACE_NAME)' not reachable / items missing — demo continues."
+          exit 0
+        }

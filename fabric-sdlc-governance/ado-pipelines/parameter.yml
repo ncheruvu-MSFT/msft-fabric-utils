@@ -1,0 +1,16 @@
+# fabric-cicd parameter file — auto-swaps DEV GUIDs with target-env values.
+# Reference: https://microsoft.github.io/fabric-cicd/parameter
+find_replace:
+  # Lakehouse GUID (DE) — replace dev GUID with uat/prod GUIDs per env.
+  - find_value: "00000000-0000-0000-0000-DEVLAKEHOUSE"
+    replace_value:
+      dev:  "00000000-0000-0000-0000-DEVLAKEHOUSE"
+      test: "00000000-0000-0000-0000-UATLAKEHOUSE"
+      prod: "00000000-0000-0000-0000-PRDLAKEHOUSE"
+
+  # Workspace GUID — used inside notebooks that hard-code workspace ids.
+  - find_value: "$workspace.$id"
+    replace_value:
+      dev:  "$workspace.de-dev.id"
+      test: "$workspace.de-uat.id"
+      prod: "$workspace.analytics-prod.id"

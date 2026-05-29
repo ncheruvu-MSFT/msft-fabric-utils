@@ -1,0 +1,27 @@
+# Custom Purview classifications + classification rules for Contoso
+# Published via scripts/purview_apply_classification_rules.py
+classifications:
+  - name: CUSTOMER_LOYALTY_ID
+    description: Contoso 9-digit loyalty programme identifier
+    rule_kind: Regex
+    regex_pattern: '^LOY-\d{9}$'
+    column_pattern: '(?i)loyalty.*id'
+    min_match_threshold: 0.6
+  - name: INTERNAL_EMPLOYEE_ID
+    description: Contoso corporate email (emp{n}@contoso.com)
+    rule_kind: Regex
+    regex_pattern: '^emp\d+@contoso\.com$'
+    column_pattern: '(?i)(corporate|internal).*email|employee.*email'
+    min_match_threshold: 0.6
+  - name: HR_COMPENSATION
+    description: HR-restricted salary/compensation column
+    rule_kind: Column
+    column_pattern: '(?i)(salary|compensation|base_pay)'
+    min_match_threshold: 0.8
+
+# System classifications we rely on (already in Purview, no creation needed)
+system_used:
+  - MICROSOFT.PERSONAL.EMAIL
+  - MICROSOFT.PERSONAL.PHONE_NUMBER
+  - MICROSOFT.FINANCIAL.CREDIT_CARD_NUMBER
+  - MICROSOFT.GOVERNMENT.US.SOCIAL_SECURITY_NUMBER

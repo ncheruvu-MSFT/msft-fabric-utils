@@ -1,0 +1,48 @@
+# Microsoft Purview Information Protection (MIP) sensitivity labels
+# Created in compliance.microsoft.com via scripts/labels/create_mip_labels.ps1
+labels:
+  - name: Public
+    priority: 0
+    tooltip: Public information, freely shareable
+    color: '#00B050'
+  - name: Internal
+    priority: 1
+    tooltip: For internal Contoso use only
+    color: '#FFC000'
+    enforce_encryption: false
+    enforce_watermark: false
+  - name: Confidential-PII
+    priority: 2
+    tooltip: Contains personal data — handle per privacy policy
+    color: '#FF6600'
+    enforce_encryption: true
+    enforce_watermark: true
+    content_marking_header: 'CONFIDENTIAL - PII'
+    rights_users: ['AuthenticatedUsers']
+    rights_permissions: ['VIEW','EDIT']
+  - name: Highly-Confidential-Restricted
+    priority: 3
+    tooltip: Highly sensitive (HR, financial, executive) — restricted to named groups
+    color: '#C00000'
+    enforce_encryption: true
+    enforce_watermark: true
+    content_marking_header: 'HIGHLY CONFIDENTIAL - RESTRICTED'
+    rights_users: ['data-stewards@contoso.com','hr-data@contoso.com']
+    rights_permissions: ['VIEW']
+
+# Auto-labeling rules (Purview classification → MIP label)
+auto_label_rules:
+  - if_classifications_any:
+      - CUSTOMER_LOYALTY_ID
+      - MICROSOFT.PERSONAL.EMAIL
+      - MICROSOFT.PERSONAL.PHONE_NUMBER
+      - MICROSOFT.GOVERNMENT.US.SOCIAL_SECURITY_NUMBER
+    apply_label: Confidential-PII
+  - if_classifications_any:
+      - MICROSOFT.FINANCIAL.CREDIT_CARD_NUMBER
+      - HR_COMPENSATION
+    apply_label: Highly-Confidential-Restricted
+  - if_classifications_any:
+      - INTERNAL_EMPLOYEE_ID
+    apply_label: Confidential-PII
+  - default: Internal

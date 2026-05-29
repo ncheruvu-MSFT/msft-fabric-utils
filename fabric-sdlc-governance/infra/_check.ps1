@@ -1,0 +1,1 @@
+az deployment operation group list -g ng-fabric-sources -n sources-v2 --query "[?properties.provisioningState=='Failed'].{r:properties.targetResource.resourceName,t:properties.targetResource.resourceType,err:properties.statusMessage}" -o json

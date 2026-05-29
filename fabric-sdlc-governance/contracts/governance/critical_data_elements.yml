@@ -1,0 +1,82 @@
+# =============================================================================
+# Critical Data Elements  (Purview Unified Catalog "criticalDataElements")
+# -----------------------------------------------------------------------------
+# A CDE is a column/concept your business considers critical (PII, regulated,
+# revenue-impacting). Each CDE is published per environment under its domain.
+#
+#   data_type:  Number | Text | DateTime | Boolean
+#               (the apply script also accepts aliases like "string","decimal",
+#                "date","int" and maps them onto the four canonical values.)
+#   columns:    physical column references the CDE binds to (free-form;
+#               written into the CDE description, and into asset bindings
+#               once scans run).
+#
+# Owner contact: set environment variable GOVERNANCE_OWNER_OID to your Entra
+# user/group object ID and it will be added as the CDE owner on every entry.
+# =============================================================================
+
+critical_data_elements:
+
+  - name: Customer ID
+    domain: Sales
+    description: Unique identifier assigned to every Customer that has a verified account.
+    data_type: Number
+    sensitivity: Confidential-PII
+    columns:
+      - dataset: contoso.customers
+        column: CustomerID
+      - dataset: contoso.orders
+        column: CustomerID
+    related_terms: [Customer]
+
+  - name: Order ID
+    domain: Sales
+    description: Globally unique identifier of a purchase transaction.
+    data_type: Number
+    sensitivity: Internal
+    columns:
+      - dataset: contoso.orders
+        column: OrderID
+      - dataset: contoso.order_items
+        column: OrderID
+    related_terms: [Order]
+
+  - name: Email Address
+    domain: Sales
+    description: Primary contact email for a Customer; PII subject to GDPR.
+    data_type: String
+    sensitivity: Confidential-PII
+    columns:
+      - dataset: contoso.customers
+        column: Email
+    related_terms: [Customer]
+
+  - name: Employee ID
+    domain: People Operations
+    description: Unique identifier for an active Contoso Employee.
+    data_type: Number
+    sensitivity: Highly-Confidential-Restricted
+    columns:
+      - dataset: contoso.employees
+        column: EmployeeID
+    related_terms: [Employee]
+
+  - name: Annual Salary
+    domain: Compensation
+    description: Gross annual base pay; Highly Confidential.
+    data_type: Decimal
+    sensitivity: Highly-Confidential-Restricted
+    columns:
+      - dataset: contoso.employees
+        column: AnnualSalary
+    related_terms: [Compensation Package]
+
+  - name: Net Revenue Amount
+    domain: Revenue
+    description: Recognized revenue per Order line, net of returns/discounts.
+    data_type: Decimal
+    sensitivity: Internal
+    columns:
+      - dataset: contoso.order_items
+        column: NetAmount
+    related_terms: [Revenue]

@@ -1,0 +1,89 @@
+# =============================================================================
+# Governance Domain Catalog  (Purview Unified Catalog)
+# -----------------------------------------------------------------------------
+# Shape your data-governance org chart here. The script `governance_apply.py`
+# reads this file and:
+#   * Creates each top-level domain
+#   * Creates each subdomain underneath its parent
+#   * Replicates the whole tree for every environment listed in `environments`
+#     (e.g. Sales-DEV / Sales-TEST / Sales-PROD) so non-prod and prod can be
+#     governed separately.
+#   * Optionally pins each domain to a Fabric workspace + Purview collection.
+#
+# Customize freely — anything you put here becomes governance the next run.
+# =============================================================================
+
+# Suffix pattern applied to a domain name in non-prod envs.
+# Use "{name}-{env}"  -> "Sales-DEV", "Sales-TEST", "Sales"  (prod = no suffix)
+# Or "{env}-{name}"   -> "DEV-Sales"
+name_pattern: "{name}-{env}"
+
+# Environments that get their own copy of the domain tree.
+# Mark exactly one as `is_prod: true` — that env will skip the env suffix.
+environments:
+  - key: dev
+    label: DEV
+    fabric_workspace: fabric-de-dev
+    purview_collection: ngpurview
+    status: Draft
+  - key: test
+    label: TEST
+    fabric_workspace: fabric-de-test
+    purview_collection: ngpurview
+    status: Draft
+  - key: prod
+    label: PROD
+    fabric_workspace: fabric-de-prod
+    purview_collection: ngpurview
+    status: Published
+    is_prod: true
+
+# Default owners (Entra UPNs / group object IDs) inherited by every domain
+# unless the domain block sets its own `owners:`.
+default_owners:
+  - admin@MngEnvMCAP219373.onmicrosoft.com
+
+# -----------------------------------------------------------------------------
+# Top-level domains and their subdomains.  `subdomains` is recursive, so you
+# can nest as deep as your business model needs (e.g. Retail > Sales > Online).
+# -----------------------------------------------------------------------------
+domains:
+
+  - name: Contoso Retail
+    description: "Customer-facing commerce: customers, orders, products, channels."
+    type: FunctionalUnit
+    subdomains:
+      - name: Sales
+        description: Booked revenue, orders, returns.
+        subdomains:
+          - name: Online Sales
+            description: Web + mobile purchase journey.
+          - name: Store Sales
+            description: Brick-and-mortar transactions.
+      - name: Marketing
+        description: Campaigns, segments, attribution.
+      - name: Catalog
+        description: Products, categories, pricing.
+
+  - name: Contoso HR
+    description: Workforce + compensation (Highly Confidential).
+    type: FunctionalUnit
+    subdomains:
+      - name: People Operations
+        description: Employee records, org structure.
+      - name: Compensation
+        description: Pay, bonus, equity.
+
+  - name: Contoso Telemetry
+    description: "Behavioural / clickstream / IoT events."
+    type: FunctionalUnit
+    subdomains:
+      - name: Web Analytics
+      - name: Device Telemetry
+
+  - name: Contoso Finance
+    description: "GL, treasury, AR/AP (Restricted)."
+    type: FunctionalUnit
+    subdomains:
+      - name: Revenue
+      - name: Treasury
