@@ -108,16 +108,20 @@ def wait(job_url: str, timeout_s: int = 1800) -> dict:
         time.sleep(15)
     sys.exit("job timed out")
 
-def parameter_cell_from_ontology(ontology_yaml: pathlib.Path) -> dict:
+def parameter_cell_from_ontology(ontology_yaml: pathlib.Path, workspace: str) -> dict:
     """Convert agent_guidance block into the notebook's tagged 'parameters' cell."""
     o = yaml.safe_load(ontology_yaml.read_text(encoding="utf-8"))
     g = o.get("agent_guidance", {})
-    return {
+    params = {
+        "WORKSPACE_NAME":     {"value": workspace,                                   "type": "string"},
         "AGENT_NAME":         {"value": g.get("agent_name", "sales_pipeline_agent"), "type": "string"},
         "LAKEHOUSE_NAME":     {"value": g.get("lakehouse",  "lh_silver"),            "type": "string"},
-        "WAREHOUSE_NAME":     {"value": g.get("warehouse",  "wh_gold"),              "type": "string"},
         "AGENT_INSTRUCTIONS": {"value": g.get("instructions", "").strip(),           "type": "string"},
     }
+    wh = g.get("warehouse")
+    if wh:
+        params["WAREHOUSE_NAME"] = {"value": wh, "type": "string"}
+    return params
 
 def main():
     ap = argparse.ArgumentParser()
@@ -134,9 +138,10 @@ def main():
     print(f"workspace={args.workspace} ({ws_id})")
     print(f"notebook ={args.notebook} ({nb_id})")
 
-    params = parameter_cell_from_ontology(pathlib.Path(args.ontology))
+    params = parameter_cell_from_ontology(pathlib.Path(args.ontology), args.workspace)
     print(f"params   = AGENT_NAME={params['AGENT_NAME']['value']}, "
-          f"LH={params['LAKEHOUSE_NAME']['value']}, WH={params['WAREHOUSE_NAME']['value']}")
+          f"LH={params['LAKEHOUSE_NAME']['value']}, "
+          f"WH={params.get('WAREHOUSE_NAME', {}).get('value', '<none>')}")
 
     job_url = run_notebook(ws_id, nb_id, params)
     print(f"job      = {job_url}")
