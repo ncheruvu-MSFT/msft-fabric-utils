@@ -26,6 +26,8 @@ on:
       - fabric-sdlc-governance/contracts/ontology/sales.yml
       - fabric-sdlc-governance/scripts/seed_sales_samples.py
       - fabric-sdlc-governance/scripts/deploy_data_agent.py
+      - fabric-sdlc-governance/scripts/build_lh_gold.py
+      - fabric-sdlc-governance/items/lakehouse/lh_gold/transforms.py
       - .github/workflows/fabric-data-agent.yml
   workflow_dispatch:
 
@@ -50,14 +52,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
-      - run: pip install -q pyyaml requests azure-identity fabric-cicd
+      - run: pip install -q pyyaml requests azure-identity fabric-cicd pandas
       - name: Validate sales ontology
         run: python fabric-sdlc-governance/scripts/validate_ontology.py "$ONTOLOGY_FILE"
       - name: Lint helper scripts
         run: |
           python -m py_compile \
             fabric-sdlc-governance/scripts/seed_sales_samples.py \
-            fabric-sdlc-governance/scripts/deploy_data_agent.py
+            fabric-sdlc-governance/scripts/deploy_data_agent.py \
+            fabric-sdlc-governance/scripts/build_lh_gold.py \
+            fabric-sdlc-governance/items/lakehouse/lh_gold/transforms.py
 
   # ─── 2. Deploy to Dev ────────────────────────────────────
   dev:
@@ -69,7 +73,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
-      - run: pip install -q pyyaml requests azure-identity fabric-cicd
+      - run: pip install -q pyyaml requests azure-identity fabric-cicd pandas
       - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -81,6 +85,11 @@ jobs:
             --workspace "$WORKSPACE_DEV" \
             --lakehouse "$LAKEHOUSE_NAME" \
             --upload
+      - name: Build lh_gold (curated layer) in Dev
+        run: |
+          python fabric-sdlc-governance/scripts/build_lh_gold.py \
+            --workspace "$WORKSPACE_DEV" \
+            --lakehouse lh_gold
       - name: Deploy Data Agent in Dev (pure REST, no Spark)
         run: |
           python fabric-sdlc-governance/scripts/deploy_data_agent.py \
@@ -97,7 +106,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
-      - run: pip install -q pyyaml requests azure-identity fabric-cicd
+      - run: pip install -q pyyaml requests azure-identity fabric-cicd pandas
       - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -119,6 +128,11 @@ jobs:
             --workspace "$WORKSPACE_TEST" \
             --lakehouse "$LAKEHOUSE_NAME" \
             --upload
+      - name: Build lh_gold (curated layer) in Test
+        run: |
+          python fabric-sdlc-governance/scripts/build_lh_gold.py \
+            --workspace "$WORKSPACE_TEST" \
+            --lakehouse lh_gold
       - name: Deploy Data Agent in Test (pure REST, no Spark)
         run: |
           python fabric-sdlc-governance/scripts/deploy_data_agent.py \
@@ -135,7 +149,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
-      - run: pip install -q pyyaml requests azure-identity fabric-cicd
+      - run: pip install -q pyyaml requests azure-identity fabric-cicd pandas
       - uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -157,6 +171,11 @@ jobs:
             --workspace "$WORKSPACE_PROD" \
             --lakehouse "$LAKEHOUSE_NAME" \
             --upload
+      - name: Build lh_gold (curated layer) in Prod
+        run: |
+          python fabric-sdlc-governance/scripts/build_lh_gold.py \
+            --workspace "$WORKSPACE_PROD" \
+            --lakehouse lh_gold
       - name: Deploy Data Agent in Prod (pure REST, no Spark)
         run: |
           python fabric-sdlc-governance/scripts/deploy_data_agent.py \
