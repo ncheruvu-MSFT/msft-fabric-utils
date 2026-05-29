@@ -25,8 +25,7 @@ on:
     paths:
       - fabric-sdlc-governance/contracts/ontology/sales.yml
       - fabric-sdlc-governance/scripts/seed_sales_samples.py
-      - fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py
-      - fabric-sdlc-governance/notebook/fabric-data-agent-sales-demo.ipynb
+      - fabric-sdlc-governance/scripts/deploy_data_agent.py
       - .github/workflows/fabric-data-agent.yml
   workflow_dispatch:
 
@@ -58,7 +57,7 @@ jobs:
         run: |
           python -m py_compile \
             fabric-sdlc-governance/scripts/seed_sales_samples.py \
-            fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py
+            fabric-sdlc-governance/scripts/deploy_data_agent.py
 
   # ─── 2. Deploy to Dev ────────────────────────────────────
   dev:
@@ -82,11 +81,10 @@ jobs:
             --workspace "$WORKSPACE_DEV" \
             --lakehouse "$LAKEHOUSE_NAME" \
             --upload
-      - name: Trigger Data Agent notebook in Dev
+      - name: Deploy Data Agent in Dev (pure REST, no Spark)
         run: |
-          python fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py \
+          python fabric-sdlc-governance/scripts/deploy_data_agent.py \
             --workspace "$WORKSPACE_DEV" \
-            --notebook  "$NOTEBOOK_NAME" \
             --ontology  "$ONTOLOGY_FILE"
 
   # ─── 3. Promote to Test (approval gate) ──────────────────
@@ -115,11 +113,16 @@ jobs:
             --environment test \
             --item-types Notebook,Lakehouse,DataPipeline,Warehouse,SemanticModel,Report || \
             echo "::warning::fabric-cicd deploy non-fatal"
-      - name: Trigger Data Agent notebook in Test
+      - name: Seed sample sales data into Test Lakehouse
         run: |
-          python fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py \
+          python fabric-sdlc-governance/scripts/seed_sales_samples.py \
             --workspace "$WORKSPACE_TEST" \
-            --notebook  "$NOTEBOOK_NAME" \
+            --lakehouse "$LAKEHOUSE_NAME" \
+            --upload
+      - name: Deploy Data Agent in Test (pure REST, no Spark)
+        run: |
+          python fabric-sdlc-governance/scripts/deploy_data_agent.py \
+            --workspace "$WORKSPACE_TEST" \
             --ontology  "$ONTOLOGY_FILE"
 
   # ─── 4. Promote to Prod (approval gate) ──────────────────
@@ -148,9 +151,14 @@ jobs:
             --environment prod \
             --item-types Notebook,Lakehouse,DataPipeline,Warehouse,SemanticModel,Report || \
             echo "::warning::fabric-cicd deploy non-fatal"
-      - name: Trigger Data Agent notebook in Prod
+      - name: Seed sample sales data into Prod Lakehouse
         run: |
-          python fabric-sdlc-governance/scripts/trigger_data_agent_notebook.py \
+          python fabric-sdlc-governance/scripts/seed_sales_samples.py \
             --workspace "$WORKSPACE_PROD" \
-            --notebook  "$NOTEBOOK_NAME" \
+            --lakehouse "$LAKEHOUSE_NAME" \
+            --upload
+      - name: Deploy Data Agent in Prod (pure REST, no Spark)
+        run: |
+          python fabric-sdlc-governance/scripts/deploy_data_agent.py \
+            --workspace "$WORKSPACE_PROD" \
             --ontology  "$ONTOLOGY_FILE"
