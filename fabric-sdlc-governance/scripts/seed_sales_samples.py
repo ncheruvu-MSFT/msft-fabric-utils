@@ -149,6 +149,42 @@ def write_csv(name, rows):
         w.writeheader(); w.writerows(rows)
     return p
 
+def _fabric_token() -> str:
+    from azure.identity import DefaultAzureCredential
+    return DefaultAzureCredential(exclude_interactive_browser_credential=False)\
+        .get_token("https://api.fabric.microsoft.com/.default").token
+
+
+def _resolve_workspace_id(workspace: str, tok: str) -> str:
+    import requests
+    r = requests.get("https://api.fabric.microsoft.com/v1/workspaces",
+                     headers={"Authorization": f"Bearer {tok}"})
+    r.raise_for_status()
+    for w in r.json().get("value", []):
+        if w["displayName"] == workspace:
+            return w["id"]
+    raise SystemExit(f"workspace not found: {workspace}")
+
+
+def ensure_lakehouse(workspace: str, lakehouse: str) -> None:
+    """Create the Lakehouse via Fabric REST if it does not already exist."""
+    import requests
+    tok = _fabric_token()
+    ws_id = _resolve_workspace_id(workspace, tok)
+    hdr = {"Authorization": f"Bearer {tok}"}
+    r = requests.get(f"https://api.fabric.microsoft.com/v1/workspaces/{ws_id}/items?type=Lakehouse",
+                     headers=hdr); r.raise_for_status()
+    if any(it["displayName"] == lakehouse for it in r.json().get("value", [])):
+        print(f"  lakehouse exists: {lakehouse}")
+        return
+    print(f"  creating lakehouse: {lakehouse}")
+    r = requests.post(f"https://api.fabric.microsoft.com/v1/workspaces/{ws_id}/lakehouses",
+                      headers={**hdr, "Content-Type": "application/json"},
+                      json={"displayName": lakehouse})
+    if r.status_code not in (200, 201, 202):
+        raise SystemExit(f"lakehouse create failed {r.status_code}: {r.text}")
+
+
 def upload_to_onelake(workspace: str, lakehouse: str, files: list[pathlib.Path], folder: str = "sales") -> None:
     """PUT each CSV into Files/<folder>/ of the Lakehouse via OneLake DFS endpoint."""
     import requests
@@ -206,6 +242,8 @@ def main():
     if args.upload:
         if not (args.workspace and args.lakehouse):
             print("--upload requires --workspace and --lakehouse", file=sys.stderr); sys.exit(2)
+        print(f"\nEnsuring lakehouse: {args.workspace} / {args.lakehouse}")
+        ensure_lakehouse(args.workspace, args.lakehouse)
         print(f"\nUploading to OneLake: {args.workspace} / {args.lakehouse}.Lakehouse / Files/sales/")
         upload_to_onelake(args.workspace, args.lakehouse, paths)
 
