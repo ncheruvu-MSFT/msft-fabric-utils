@@ -186,38 +186,54 @@ def ensure_lakehouse(workspace: str, lakehouse: str) -> None:
 
 
 def materialize_delta_tables(workspace: str, lakehouse: str, files: list[pathlib.Path]) -> None:
-    """Read each CSV and write it as a Delta table to <lakehouse>.Lakehouse/Tables/<name> via OneLake.
+    """For each uploaded CSV, call Fabric's Load Table API to convert it into a Delta table.
 
-    Uses delta-rs (deltalake) so we don't need Spark. Auth: storage.azure.com bearer token.
-    Required so Data Agent datasources of type `lakehouse_tables` can see the data.
+    Fabric runs the CSV->Delta conversion server-side (no Spark from our side). Required so
+    Data Agent datasources of type `lakehouse_tables` see the data via the SQL endpoint.
+    Docs: https://learn.microsoft.com/rest/api/fabric/lakehouse/tables/load-table
     """
-    try:
-        import pandas as pd
-        from deltalake import write_deltalake
-        from azure.identity import DefaultAzureCredential
-    except ImportError as e:
-        print(f"[delta] missing dependency: {e}; skipping Delta materialization", file=sys.stderr)
-        return
+    import requests, time
+    tok = _fabric_token()
+    ws_id = _resolve_workspace_id(workspace, tok)
+    hdr = {"Authorization": f"Bearer {tok}", "Content-Type": "application/json"}
 
-    token = DefaultAzureCredential(exclude_interactive_browser_credential=False) \
-        .get_token("https://storage.azure.com/.default").token
-    storage_options = {"bearer_token": token, "use_fabric_endpoint": "true"}
+    # Resolve lakehouse id
+    r = requests.get(f"https://api.fabric.microsoft.com/v1/workspaces/{ws_id}/items?type=Lakehouse",
+                     headers={"Authorization": f"Bearer {tok}"})
+    r.raise_for_status()
+    lh_id = next((it["id"] for it in r.json().get("value", []) if it["displayName"] == lakehouse), None)
+    if not lh_id:
+        raise SystemExit(f"lakehouse not found: {lakehouse}")
 
     for p in files:
         name = p.stem
-        uri  = f"abfss://{workspace}@onelake.dfs.fabric.microsoft.com/{lakehouse}.Lakehouse/Tables/{name}"
-        df = pd.read_csv(p)
-        try:
-            write_deltalake(uri, df, mode="overwrite", schema_mode="overwrite",
-                            storage_options=storage_options)
-        except Exception as e:
-            # First write to a non-existent path: delta-rs raises TableNotFoundError
-            # because schema_mode="overwrite" expects an existing table.
-            if "TableNotFound" in type(e).__name__ or "No files in log segment" in str(e):
-                write_deltalake(uri, df, storage_options=storage_options)
-            else:
-                raise
-        print(f"  materialized Delta table: Tables/{name}  ({len(df)} rows)")
+        body = {
+            "relativePath": f"Files/sales/{p.name}",
+            "pathType": "File",
+            "mode": "Overwrite",
+            "recursive": False,
+            "formatOptions": {"format": "Csv", "header": True, "delimiter": ","},
+        }
+        url = f"https://api.fabric.microsoft.com/v1/workspaces/{ws_id}/lakehouses/{lh_id}/tables/{name}/load"
+        r = requests.post(url, headers=hdr, json=body)
+        if r.status_code not in (200, 201, 202):
+            print(f"  [skip] {name}: {r.status_code} {r.text[:200]}")
+            continue
+        loc = r.headers.get("Location")
+        # poll LRO
+        for _ in range(40):
+            time.sleep(3)
+            rr = requests.get(loc, headers={"Authorization": f"Bearer {tok}"})
+            if rr.status_code == 200:
+                status = rr.json().get("status")
+                if status in ("Succeeded", "Completed"):
+                    print(f"  loaded Tables/{name}  (from Files/sales/{p.name})")
+                    break
+                if status == "Failed":
+                    print(f"  [fail] {name}: {rr.text[:200]}")
+                    break
+        else:
+            print(f"  [timeout] {name}")
 
 
 def upload_to_onelake(workspace: str, lakehouse: str, files: list[pathlib.Path], folder: str = "sales") -> None:
