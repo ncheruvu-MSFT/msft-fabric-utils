@@ -185,6 +185,34 @@ def ensure_lakehouse(workspace: str, lakehouse: str) -> None:
         raise SystemExit(f"lakehouse create failed {r.status_code}: {r.text}")
 
 
+def materialize_delta_tables(workspace: str, lakehouse: str, files: list[pathlib.Path]) -> None:
+    """Read each CSV and write it as a Delta table to <lakehouse>.Lakehouse/Tables/<name> via OneLake.
+
+    Uses delta-rs (deltalake) so we don't need Spark. Auth: storage.azure.com bearer token.
+    Required so Data Agent datasources of type `lakehouse_tables` can see the data.
+    """
+    try:
+        import pandas as pd
+        from deltalake import write_deltalake
+        from azure.identity import DefaultAzureCredential
+    except ImportError as e:
+        print(f"[delta] missing dependency: {e}; skipping Delta materialization", file=sys.stderr)
+        return
+
+    token = DefaultAzureCredential(exclude_interactive_browser_credential=False) \
+        .get_token("https://storage.azure.com/.default").token
+    storage_options = {"bearer_token": token, "use_fabric_endpoint": "true"}
+
+    for p in files:
+        name = p.stem
+        uri  = f"abfss://{workspace}@onelake.dfs.fabric.microsoft.com/{lakehouse}.Lakehouse/Tables/{name}"
+        df = pd.read_csv(p)
+        write_deltalake(uri, df, mode="overwrite",
+                        storage_options=storage_options,
+                        schema_mode="overwrite")
+        print(f"  materialized Delta table: Tables/{name}  ({len(df)} rows)")
+
+
 def upload_to_onelake(workspace: str, lakehouse: str, files: list[pathlib.Path], folder: str = "sales") -> None:
     """PUT each CSV into Files/<folder>/ of the Lakehouse via OneLake DFS endpoint."""
     import requests
@@ -246,6 +274,8 @@ def main():
         ensure_lakehouse(args.workspace, args.lakehouse)
         print(f"\nUploading to OneLake: {args.workspace} / {args.lakehouse}.Lakehouse / Files/sales/")
         upload_to_onelake(args.workspace, args.lakehouse, paths)
+        print(f"\nMaterializing Delta tables in {args.lakehouse}.Lakehouse/Tables/")
+        materialize_delta_tables(args.workspace, args.lakehouse, paths)
 
 if __name__ == "__main__":
     main()
