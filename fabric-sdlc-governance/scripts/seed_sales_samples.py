@@ -207,9 +207,16 @@ def materialize_delta_tables(workspace: str, lakehouse: str, files: list[pathlib
         name = p.stem
         uri  = f"abfss://{workspace}@onelake.dfs.fabric.microsoft.com/{lakehouse}.Lakehouse/Tables/{name}"
         df = pd.read_csv(p)
-        write_deltalake(uri, df, mode="overwrite",
-                        storage_options=storage_options,
-                        schema_mode="overwrite")
+        try:
+            write_deltalake(uri, df, mode="overwrite", schema_mode="overwrite",
+                            storage_options=storage_options)
+        except Exception as e:
+            # First write to a non-existent path: delta-rs raises TableNotFoundError
+            # because schema_mode="overwrite" expects an existing table.
+            if "TableNotFound" in type(e).__name__ or "No files in log segment" in str(e):
+                write_deltalake(uri, df, storage_options=storage_options)
+            else:
+                raise
         print(f"  materialized Delta table: Tables/{name}  ({len(df)} rows)")
 
 
