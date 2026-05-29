@@ -39,10 +39,37 @@ def resolve_item_id(ws_id: str, name: str, item_type: str = "Notebook") -> str:
     sys.exit(f"{item_type} not found in workspace: {name}")
 
 
-def _update_notebook_definition(ws_id: str, nb_id: str, ipynb_path: pathlib.Path) -> None:
-    """Replace the in-Fabric notebook content with the local .ipynb (idempotent)."""
+def _resolve_lakehouse_id(ws_id: str, name: str) -> str | None:
+    r = requests.get(f"{FABRIC}/workspaces/{ws_id}/items?type=Lakehouse", headers=headers())
+    r.raise_for_status()
+    for it in r.json().get("value", []):
+        if it["displayName"] == name:
+            return it["id"]
+    return None
+
+
+def _update_notebook_definition(ws_id: str, nb_id: str, ipynb_path: pathlib.Path,
+                                lakehouse_name: str | None = None) -> None:
+    """Replace the in-Fabric notebook content with the local .ipynb (idempotent).
+
+    Injects metadata.dependencies.lakehouse with the target workspace's lakehouse id so
+    spark.read can resolve relative Files/Tables paths without UI attachment.
+    """
     import base64
-    payload = base64.b64encode(ipynb_path.read_bytes()).decode("ascii")
+    nb = json.loads(ipynb_path.read_text(encoding="utf-8"))
+    if lakehouse_name:
+        lh_id = _resolve_lakehouse_id(ws_id, lakehouse_name)
+        if lh_id:
+            nb.setdefault("metadata", {})["dependencies"] = {
+                "lakehouse": {
+                    "default_lakehouse": lh_id,
+                    "default_lakehouse_name": lakehouse_name,
+                    "default_lakehouse_workspace_id": ws_id,
+                    "known_lakehouses": [{"id": lh_id}],
+                }
+            }
+            print(f"  attached default lakehouse {lakehouse_name} ({lh_id})")
+    payload = base64.b64encode(json.dumps(nb).encode("utf-8")).decode("ascii")
     body = {
         "definition": {
             "format": "ipynb",
@@ -68,7 +95,8 @@ def _update_notebook_definition(ws_id: str, nb_id: str, ipynb_path: pathlib.Path
     sys.exit(f"updateDefinition failed {r.status_code}: {r.text}")
 
 
-def ensure_notebook(ws_id: str, name: str, ipynb_path: pathlib.Path) -> str:
+def ensure_notebook(ws_id: str, name: str, ipynb_path: pathlib.Path,
+                    lakehouse_name: str | None = None) -> str:
     """Return notebook id; import from local .ipynb if missing, or update definition if present."""
     import base64
     r = requests.get(f"{FABRIC}/workspaces/{ws_id}/items?type=Notebook", headers=headers())
@@ -76,12 +104,25 @@ def ensure_notebook(ws_id: str, name: str, ipynb_path: pathlib.Path) -> str:
     for it in r.json().get("value", []):
         if it["displayName"] == name:
             if ipynb_path.exists():
-                _update_notebook_definition(ws_id, it["id"], ipynb_path)
+                _update_notebook_definition(ws_id, it["id"], ipynb_path, lakehouse_name)
             return it["id"]
     if not ipynb_path.exists():
         sys.exit(f"notebook missing in workspace and local file not found: {ipynb_path}")
     print(f"  importing notebook from {ipynb_path}")
-    payload = base64.b64encode(ipynb_path.read_bytes()).decode("ascii")
+    # Build payload with injected lakehouse metadata too
+    nb = json.loads(ipynb_path.read_text(encoding="utf-8"))
+    if lakehouse_name:
+        lh_id = _resolve_lakehouse_id(ws_id, lakehouse_name)
+        if lh_id:
+            nb.setdefault("metadata", {})["dependencies"] = {
+                "lakehouse": {
+                    "default_lakehouse": lh_id,
+                    "default_lakehouse_name": lakehouse_name,
+                    "default_lakehouse_workspace_id": ws_id,
+                    "known_lakehouses": [{"id": lh_id}],
+                }
+            }
+    payload = base64.b64encode(json.dumps(nb).encode("utf-8")).decode("ascii")
     body = {
         "displayName": name,
         "definition": {
@@ -165,7 +206,9 @@ def main():
     args = ap.parse_args()
 
     ws_id = resolve_workspace_id(args.workspace)
-    nb_id = ensure_notebook(ws_id, args.notebook, pathlib.Path(args.ipynb))
+    lakehouse_name = yaml.safe_load(pathlib.Path(args.ontology).read_text(encoding="utf-8"))\
+                        .get("agent_guidance", {}).get("lakehouse", "lh_silver")
+    nb_id = ensure_notebook(ws_id, args.notebook, pathlib.Path(args.ipynb), lakehouse_name)
     print(f"workspace={args.workspace} ({ws_id})")
     print(f"notebook ={args.notebook} ({nb_id})")
 
