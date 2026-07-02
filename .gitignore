@@ -52,6 +52,12 @@ tfplan
 _*.txt
 _*.zip
 
+# Runtime artifacts / exports / deploy records (may contain org identifiers)
+**/out/
+**/.deployments.json
+**/deploy.log
+**/*.log
+
 # Backup of ADO inner git dir (kept locally for ADO sync)
 fabric-sdlc-governance/_git_ado_backup/
 
