@@ -31,6 +31,27 @@ Thumbs.db
 *.pfx
 *.key
 
+# Customer / engagement artifacts — never commit
+*KPMG*
+*kpmg*
+
+# Archives (avoid committing binary bundles / assessment exports)
+*.zip
+
+# Terraform state & vars (may contain secrets) — keep only *.example
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+tfplan
+
+# Browser automation / MCP session logs
+.playwright-mcp/
+
+# Local scan / scratch files
+_*.txt
+_*.zip
+
 # Backup of ADO inner git dir (kept locally for ADO sync)
 fabric-sdlc-governance/_git_ado_backup/
 

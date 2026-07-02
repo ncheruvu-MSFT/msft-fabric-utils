@@ -28,6 +28,7 @@ on:
       - fabric-sdlc-governance/scripts/deploy_data_agent.py
       - fabric-sdlc-governance/scripts/build_lh_gold.py
       - fabric-sdlc-governance/items/lakehouse/lh_gold/transforms.py
+      - fabric-sdlc-governance/fabric-items/**
       - .github/workflows/fabric-data-agent.yml
   workflow_dispatch:
 
@@ -79,6 +80,13 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: fabric-cicd deploy -> Dev (git-format items + variable library)
+        run: |
+          python fabric-sdlc-governance/scripts/fabric_deploy.py \
+            --workspace-name "$WORKSPACE_DEV" \
+            --items-path fabric-sdlc-governance/fabric-items \
+            --environment dev \
+            --item-types Notebook
       - name: Seed sample sales data into Dev Lakehouse
         run: |
           python fabric-sdlc-governance/scripts/seed_sales_samples.py \
@@ -112,16 +120,15 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: fabric-cicd deploy -> Test
+      - name: fabric-cicd deploy -> Test (git-format items + variable library)
         env:
           FABRIC_WORKSPACE_NAME: ${{ env.WORKSPACE_TEST }}
         run: |
           python fabric-sdlc-governance/scripts/fabric_deploy.py \
             --workspace-name "$WORKSPACE_TEST" \
-            --items-path fabric-sdlc-governance/notebook \
+            --items-path fabric-sdlc-governance/fabric-items \
             --environment test \
-            --item-types Notebook,Lakehouse,DataPipeline,Warehouse,SemanticModel,Report || \
-            echo "::warning::fabric-cicd deploy non-fatal"
+            --item-types Notebook
       - name: Seed sample sales data into Test Lakehouse
         run: |
           python fabric-sdlc-governance/scripts/seed_sales_samples.py \
@@ -155,16 +162,15 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: fabric-cicd deploy -> Prod
+      - name: fabric-cicd deploy -> Prod (git-format items + variable library)
         env:
           FABRIC_WORKSPACE_NAME: ${{ env.WORKSPACE_PROD }}
         run: |
           python fabric-sdlc-governance/scripts/fabric_deploy.py \
             --workspace-name "$WORKSPACE_PROD" \
-            --items-path fabric-sdlc-governance/notebook \
+            --items-path fabric-sdlc-governance/fabric-items \
             --environment prod \
-            --item-types Notebook,Lakehouse,DataPipeline,Warehouse,SemanticModel,Report || \
-            echo "::warning::fabric-cicd deploy non-fatal"
+            --item-types Notebook
       - name: Seed sample sales data into Prod Lakehouse
         run: |
           python fabric-sdlc-governance/scripts/seed_sales_samples.py \
