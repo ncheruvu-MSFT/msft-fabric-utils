@@ -1,0 +1,4 @@
+# Generated scale datasets (can be huge — regenerate with gen_scale_lineage.py)
+out/
+__pycache__/
+*.pyc

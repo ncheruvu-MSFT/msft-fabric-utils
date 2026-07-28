@@ -1,0 +1,50 @@
+{
+  "name": "lineage_harvest_pipeline",
+  "properties": {
+    "description": "Hourly: harvest cross-source lineage -> publish to Purview -> sync Entra groups.",
+    "activities": [
+      {
+        "name": "Harvest",
+        "type": "TridentNotebook",
+        "typeProperties": {
+          "notebookId": "{{HARVEST_NOTEBOOK_ID}}",
+          "workspaceId": "{{FABRIC_WORKSPACE_ID}}"
+        }
+      },
+      {
+        "name": "PublishToPurview",
+        "type": "TridentNotebook",
+        "dependsOn": [{ "activity": "Harvest", "dependencyConditions": ["Succeeded"] }],
+        "typeProperties": {
+          "notebookId": "{{PUBLISH_NOTEBOOK_ID}}",
+          "workspaceId": "{{FABRIC_WORKSPACE_ID}}"
+        }
+      },
+      {
+        "name": "GlossaryWorkflows",
+        "type": "TridentNotebook",
+        "dependsOn": [{ "activity": "Harvest", "dependencyConditions": ["Succeeded"] }],
+        "typeProperties": {
+          "notebookId": "{{GLOSSARY_NOTEBOOK_ID}}",
+          "workspaceId": "{{FABRIC_WORKSPACE_ID}}"
+        }
+      },
+      {
+        "name": "EntraSync",
+        "type": "TridentNotebook",
+        "dependsOn": [{ "activity": "PublishToPurview", "dependencyConditions": ["Succeeded"] }],
+        "typeProperties": {
+          "notebookId": "{{ENTRA_NOTEBOOK_ID}}",
+          "workspaceId": "{{FABRIC_WORKSPACE_ID}}"
+        }
+      }
+    ],
+    "triggers": [
+      {
+        "name": "hourly",
+        "type": "ScheduleTrigger",
+        "recurrence": { "frequency": "Hour", "interval": 1 }
+      }
+    ]
+  }
+}

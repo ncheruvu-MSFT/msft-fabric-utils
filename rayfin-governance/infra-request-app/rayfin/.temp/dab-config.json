@@ -1,0 +1,117 @@
+{
+  "$schema": "https://github.com/Azure/data-api-builder/releases/download/v1.5.56/dab.draft.schema.json",
+  "entities": {
+    "InfraRequest": {
+      "source": "InfraRequests",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "delete",
+              "policy": {
+                "database": "@claims.role eq 'governance-admin'"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "(((@claims.role eq 'infra-approver') or (@claims.role eq 'governance-admin')) or (@claims.role eq 'pipeline')) or (@claims.sub eq @item.ownerSub)"
+              }
+            },
+            "create",
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "requestType": {
+            "dbType": "NVARCHAR(40)",
+            "nullable": false
+          },
+          "displayName": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "environment": {
+            "dbType": "NVARCHAR(40)",
+            "nullable": false
+          },
+          "domain": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "capacitySku": {
+            "dbType": "NVARCHAR(40)",
+            "nullable": true
+          },
+          "region": {
+            "dbType": "NVARCHAR(80)",
+            "nullable": true
+          },
+          "targetCapacity": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "justification": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": false
+          },
+          "costCenter": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": true
+          },
+          "status": {
+            "dbType": "NVARCHAR(40)",
+            "nullable": false
+          },
+          "approverSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "approvalNote": {
+            "dbType": "NVARCHAR(2000)",
+            "nullable": true
+          },
+          "githubIssueUrl": {
+            "dbType": "NVARCHAR(400)",
+            "nullable": true
+          },
+          "githubIssueNumber": {
+            "dbType": "INT",
+            "nullable": true
+          },
+          "ownerSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "auditCreatedBy": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "auditCreatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          },
+          "auditUpdatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": true
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_InfraRequests",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

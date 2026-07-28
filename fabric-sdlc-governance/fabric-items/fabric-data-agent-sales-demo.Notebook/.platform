@@ -1,0 +1,12 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Notebook",
+    "displayName": "fabric-data-agent-sales-demo",
+    "description": "Sales pipeline demo notebook, deployed across DEV/TEST/PROD by fabric-cicd."
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "3f2504e0-4f89-41d3-9a0c-0305e82c3301"
+  }
+}

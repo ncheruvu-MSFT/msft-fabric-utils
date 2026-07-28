@@ -1,0 +1,4 @@
+azure-functions
+azure-identity>=1.17.0
+azure-mgmt-resource>=23.1.0
+azure-mgmt-rdbms>=10.1.0

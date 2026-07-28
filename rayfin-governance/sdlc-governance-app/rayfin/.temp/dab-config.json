@@ -1,0 +1,321 @@
+{
+  "$schema": "https://github.com/Azure/data-api-builder/releases/download/v1.5.56/dab.draft.schema.json",
+  "entities": {
+    "Workspace": {
+      "source": "Workspaces",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "create",
+              "policy": {
+                "database": "@claims.role eq 'governance-admin'"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "@claims.role eq 'governance-admin'"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "@claims.role eq 'governance-admin'"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "name": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "fabricWorkspaceId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "envKey": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "domainId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "isPrivateLink": {
+            "dbType": "BIT",
+            "nullable": false
+          },
+          "ownerEmail": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_Workspaces",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "Domain": {
+      "source": "Domains",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "create",
+              "policy": {
+                "database": "@claims.role eq 'governance-admin'"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "@claims.role eq 'governance-admin'"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "@claims.role eq 'governance-admin'"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "name": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "description": {
+            "dbType": "NVARCHAR(1000)",
+            "nullable": true
+          },
+          "type": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "envKey": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "status": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "parentId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "fabricWorkspace": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "purviewCollection": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "ownerEmail": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "isActive": {
+            "dbType": "BIT",
+            "nullable": false
+          },
+          "auditCreatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          },
+          "auditUpdatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": true
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_Domains",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "CriticalDataElement": {
+      "source": "CriticalDataElements",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "create",
+              "policy": {
+                "database": "(@claims.role eq 'governance-admin') or (@claims.role eq 'domain-steward')"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "(@claims.role eq 'governance-admin') or (@claims.role eq 'domain-steward')"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "(@claims.role eq 'governance-admin') or (@claims.role eq 'domain-steward')"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "name": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "domainId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "description": {
+            "dbType": "NVARCHAR(1000)",
+            "nullable": false
+          },
+          "dataType": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "sensitivity": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "columnsJson": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          },
+          "relatedTermsCsv": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          },
+          "envKey": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_CriticalDataElements",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "AttestationRun": {
+      "source": "AttestationRuns",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "update",
+              "policy": {
+                "database": "@claims.role eq 'governance-admin'"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "@claims.role eq 'governance-admin'"
+              }
+            },
+            {
+              "action": "create",
+              "policy": {
+                "database": "(@claims.role eq 'pipeline') or (@claims.role eq 'governance-admin')"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "workspaceId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "policyName": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "result": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "pipelineRunUrl": {
+            "dbType": "NVARCHAR(400)",
+            "nullable": false
+          },
+          "commitSha": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "submittedBySub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "findingsJson": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          },
+          "runAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_AttestationRuns",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

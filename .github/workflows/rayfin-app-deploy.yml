@@ -1,0 +1,107 @@
+# ============================================================
+# Reusable Rayfin app deploy — CALLABLE TEMPLATE (workflow_call)
+#
+# Builds one Rayfin app (Vite) and deploys it into an EXISTING Fabric
+# workspace via the Rayfin CLI (`rayfin up`). Call it from an environment
+# caller workflow (see rayfin-governance.yml) so approvals + per-environment
+# workspace targeting come from GitHub Environments.
+#
+# ── AUTH ────────────────────────────────────────────────────
+# Rayfin CLI supports interactive login OR service-principal client-credentials
+# (`rayfin login --service-principal`). It does NOT support OIDC, so this needs
+# a CLIENT SECRET. Pass secrets from the caller with `secrets: inherit`.
+#
+#   Secrets (repo or environment):
+#     FABRIC_SP_CLIENT_ID       app (client) id of the deploy SPN
+#     FABRIC_SP_CLIENT_SECRET   client secret value
+#   Variables (SCOPE PER ENVIRONMENT — Settings -> Environments -> <env> -> Vars):
+#     FABRIC_TENANT_ID          Entra tenant GUID
+#     FABRIC_WORKSPACE_ID       target workspace GUID for THIS environment
+#     FABRIC_CAPACITY_ID        capacity GUID backing the workspace
+#
+# ⚠ If SP data-plane is blocked by Conditional Access (403 AuthorizationFailure)
+#   set input `use-self-hosted: true` and register a runner labelled
+#   `fabric-rayfin` where a human ran `rayfin login` once (cached token reused).
+# ============================================================
+name: Rayfin app deploy (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      app-dir:
+        description: 'Path to the Rayfin app folder (contains package.json + rayfin/).'
+        required: true
+        type: string
+      environment:
+        description: 'GitHub Environment to deploy to (drives approvals + scoped vars).'
+        required: true
+        type: string
+      node-version:
+        description: 'Node.js version.'
+        required: false
+        type: string
+        default: '20'
+      use-self-hosted:
+        description: 'Run on a self-hosted [self-hosted, fabric-rayfin] runner and skip SP login.'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      FABRIC_SP_CLIENT_ID:
+        required: false
+      FABRIC_SP_CLIENT_SECRET:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: 'rayfin up'
+    runs-on: ${{ inputs.use-self-hosted && fromJSON('["self-hosted","fabric-rayfin"]') || 'ubuntu-latest' }}
+    environment: ${{ inputs.environment }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.app-dir }}
+    env:
+      FABRIC_TENANT_ID:    ${{ vars.FABRIC_TENANT_ID }}
+      FABRIC_WORKSPACE_ID: ${{ vars.FABRIC_WORKSPACE_ID }}
+      FABRIC_CAPACITY_ID:  ${{ vars.FABRIC_CAPACITY_ID }}
+      RAYFIN_TELEMETRY_OPTOUT: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.app-dir }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend (Vite)
+        run: npm run build
+
+      - name: Install Rayfin CLI
+        run: npm i -g @microsoft/rayfin-cli
+
+      - name: Rayfin sign-in (service principal)
+        if: ${{ !inputs.use-self-hosted }}
+        run: |
+          rayfin login --service-principal \
+            -u "${{ secrets.FABRIC_SP_CLIENT_ID }}" \
+            -p "${{ secrets.FABRIC_SP_CLIENT_SECRET }}" \
+            --tenant "$FABRIC_TENANT_ID" \
+            --encryption-fallback-enabled
+
+      - name: Deploy to Fabric (rayfin up)
+        run: |
+          rayfin up \
+            --workspace-id "$FABRIC_WORKSPACE_ID" \
+            --tenant "$FABRIC_TENANT_ID" \
+            -y
+
+      - name: Show deployment status
+        if: always()
+        run: rayfin up status || true

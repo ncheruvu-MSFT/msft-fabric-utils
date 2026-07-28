@@ -1,0 +1,48 @@
+{
+  "displayName": "Fabric - require MFA + compliant device + named location",
+  "state": "enabledForReportingButNotEnforced",
+  "_comment": "Start in report-only. Move to 'enabled' after 7 days of clean sign-in logs. Import via: POST https://graph.microsoft.com/v1.0/identity/conditionalAccess/policies",
+  "conditions": {
+    "applications": {
+      "_comment_apps": "00000009-0000-0000-c000-000000000000 = Power BI Service. Fabric inherits the Power BI cloud app for service-level CA today.",
+      "includeApplications": [
+        "00000009-0000-0000-c000-000000000000"
+      ],
+      "excludeApplications": []
+    },
+    "users": {
+      "includeUsers": [ "All" ],
+      "excludeGroups": [
+        "REPLACE-WITH-BREAK-GLASS-GROUP-OBJECT-ID"
+      ]
+    },
+    "clientAppTypes": [ "all" ],
+    "platforms": null,
+    "locations": {
+      "_comment_locations": "Optional: scope to named locations of approved corporate / cloud egress IPs.",
+      "includeLocations": [ "All" ],
+      "excludeLocations": [ "AllTrusted" ]
+    },
+    "signInRiskLevels": [ "high" ],
+    "userRiskLevels": []
+  },
+  "grantControls": {
+    "operator": "AND",
+    "builtInControls": [
+      "mfa",
+      "compliantDevice"
+    ]
+  },
+  "sessionControls": {
+    "signInFrequency": {
+      "value": 12,
+      "type": "hours",
+      "isEnabled": true,
+      "frequencyInterval": "timeBased"
+    },
+    "persistentBrowser": {
+      "mode": "never",
+      "isEnabled": true
+    }
+  }
+}

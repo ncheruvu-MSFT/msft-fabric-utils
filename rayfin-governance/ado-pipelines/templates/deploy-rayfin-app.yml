@@ -1,0 +1,71 @@
+# ============================================================
+# Reusable ADO steps template — build + deploy Rayfin apps.
+#
+# Loops the provided `apps` list at compile time, building each (Vite) and
+# deploying it with `rayfin up` into the workspace resolved from the stage's
+# variable group (FABRIC_WORKSPACE_ID / FABRIC_TENANT_ID / FABRIC_CAPACITY_ID).
+#
+# Auth: Rayfin CLI has no OIDC support, so a service-principal client secret is
+# used (FABRIC_SP_CLIENT_ID / FABRIC_SP_CLIENT_SECRET from the variable group).
+# If SP data-plane is blocked by Conditional Access, run the consuming stage on
+# a self-hosted agent where a human ran `rayfin login` once and set
+# `skipLogin: true` to reuse the cached token.
+# ============================================================
+parameters:
+  - name: apps
+    type: object
+    default:
+      - glossary-app
+      - lineage-app
+      - sdlc-governance-app
+      - data-agent-governance-app
+      - infra-request-app
+  - name: nodeVersion
+    type: string
+    default: '20.x'
+  - name: skipLogin
+    type: boolean
+    default: false
+
+steps:
+  - checkout: self
+
+  - task: NodeTool@0
+    displayName: 'Use Node ${{ parameters.nodeVersion }}'
+    inputs:
+      versionSpec: ${{ parameters.nodeVersion }}
+
+  - script: npm i -g @microsoft/rayfin-cli
+    displayName: 'Install Rayfin CLI'
+
+  - ${{ if not(parameters.skipLogin) }}:
+      - script: |
+          set -euo pipefail
+          rayfin login --service-principal \
+            -u "$(FABRIC_SP_CLIENT_ID)" \
+            -p "$(FABRIC_SP_CLIENT_SECRET)" \
+            --tenant "$(FABRIC_TENANT_ID)" \
+            --encryption-fallback-enabled
+        displayName: 'Rayfin sign-in (service principal)'
+        env:
+          FABRIC_SP_CLIENT_SECRET: $(FABRIC_SP_CLIENT_SECRET)
+
+  - ${{ each app in parameters.apps }}:
+      - script: |
+          set -euo pipefail
+          echo "==> Building and deploying ${{ app }}"
+          pushd "rayfin-governance/${{ app }}" >/dev/null
+          npm ci
+          npm run build
+          rayfin up \
+            --workspace-id "$(FABRIC_WORKSPACE_ID)" \
+            --tenant "$(FABRIC_TENANT_ID)" \
+            -y
+          rayfin up status || true
+          popd >/dev/null
+        displayName: 'Deploy ${{ app }} (rayfin up)'
+        env:
+          FABRIC_TENANT_ID:    $(FABRIC_TENANT_ID)
+          FABRIC_WORKSPACE_ID: $(FABRIC_WORKSPACE_ID)
+          FABRIC_CAPACITY_ID:  $(FABRIC_CAPACITY_ID)
+          RAYFIN_TELEMETRY_OPTOUT: '1'

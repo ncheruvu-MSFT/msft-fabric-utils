@@ -1,0 +1,68 @@
+# ============================================================
+# Rayfin governance apps — CI/CD (dev -> prod promotion)
+#
+# Thin CALLER that hands each app to the reusable template
+# (.github/workflows/rayfin-app-deploy.yml). Promotion + approvals come from
+# GitHub Environments:
+#   Settings -> Environments -> fabric-dev   (optional reviewers)
+#   Settings -> Environments -> fabric-prod  (REQUIRED reviewers = approval gate)
+# Scope FABRIC_WORKSPACE_ID / FABRIC_TENANT_ID / FABRIC_CAPACITY_ID as
+# ENVIRONMENT variables so dev and prod target different workspaces.
+#
+# Secrets (repo or per-environment):
+#   FABRIC_SP_CLIENT_ID, FABRIC_SP_CLIENT_SECRET
+#
+# See the reusable workflow header for the auth model + Conditional Access /
+# preview-gate caveats (self-hosted fallback via inputs.use-self-hosted).
+# ============================================================
+name: Rayfin governance apps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - rayfin-governance/**
+      - .github/workflows/rayfin-governance.yml
+      - .github/workflows/rayfin-app-deploy.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ─── Deploy to Dev ───────────────────────────────────────
+  dev:
+    name: 'Dev · ${{ matrix.app }}'
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - glossary-app
+          - lineage-app
+          - sdlc-governance-app
+          - data-agent-governance-app
+          - infra-request-app
+    uses: ./.github/workflows/rayfin-app-deploy.yml
+    with:
+      app-dir: rayfin-governance/${{ matrix.app }}
+      environment: fabric-dev
+    secrets: inherit
+
+  # ─── Promote to Prod (approval gate on fabric-prod) ──────
+  prod:
+    name: 'Prod · ${{ matrix.app }}'
+    needs: dev
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - glossary-app
+          - lineage-app
+          - sdlc-governance-app
+          - data-agent-governance-app
+          - infra-request-app
+    uses: ./.github/workflows/rayfin-app-deploy.yml
+    with:
+      app-dir: rayfin-governance/${{ matrix.app }}
+      environment: fabric-prod
+    secrets: inherit

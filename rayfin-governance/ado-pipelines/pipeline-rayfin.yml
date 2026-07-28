@@ -1,0 +1,73 @@
+# ============================================================
+# Rayfin governance apps — Azure DevOps CI/CD (dev -> prod promotion)
+#
+# Builds every Rayfin app and deploys it into an EXISTING Fabric workspace via
+# the Rayfin CLI (`rayfin up`), promoting Dev -> Prod through ADO Environments.
+# Deploy steps live in templates/deploy-rayfin-app.yml.
+#
+# ── AUTH ────────────────────────────────────────────────────
+# Rayfin CLI supports interactive login OR service-principal client-credentials.
+# It does NOT support ADO Workload Identity Federation / OIDC, so this needs a
+# CLIENT SECRET. Provide two variable groups (Pipelines -> Library), one per env:
+#
+#   rayfin-fabric-dev / rayfin-fabric-prod, each with:
+#     FABRIC_SP_CLIENT_ID       app (client) id of the deploy SPN
+#     FABRIC_SP_CLIENT_SECRET   client secret value           (mark as secret)
+#     FABRIC_TENANT_ID          Entra tenant GUID
+#     FABRIC_WORKSPACE_ID       target workspace GUID for THIS environment
+#     FABRIC_CAPACITY_ID        capacity GUID backing the workspace
+#
+# Approvals: add checks on the ADO Environments `fabric-rayfin-dev` and
+# `fabric-rayfin-prod` (Pipelines -> Environments -> ... -> Approvals and checks).
+#
+# ⚠ Conditional Access may block SP data-plane ops (403). If so, run the stage on
+#   a self-hosted agent where a human did `rayfin login` once and pass
+#   `skipLogin: true` to the template. See template header + repo README.
+# ============================================================
+name: Rayfin-Governance-$(Date:yyyyMMdd)-$(Rev:r)
+
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include:
+      - rayfin-governance/**
+      - rayfin-governance/ado-pipelines/pipeline-rayfin.yml
+      - rayfin-governance/ado-pipelines/templates/deploy-rayfin-app.yml
+
+pr: none
+
+stages:
+  # ─── Deploy to Dev ─────────────────────────────────────────
+  - stage: Dev
+    displayName: 'Deploy Rayfin apps -> Dev'
+    variables:
+      - group: rayfin-fabric-dev
+    jobs:
+      - deployment: deploy_dev
+        displayName: 'rayfin up (all apps) -> Dev'
+        environment: fabric-rayfin-dev
+        pool: { vmImage: 'ubuntu-latest' }
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: templates/deploy-rayfin-app.yml
+
+  # ─── Promote to Prod (approval on fabric-rayfin-prod) ──────
+  - stage: Prod
+    displayName: 'Promote Rayfin apps -> Prod'
+    dependsOn: Dev
+    condition: succeeded()
+    variables:
+      - group: rayfin-fabric-prod
+    jobs:
+      - deployment: deploy_prod
+        displayName: 'rayfin up (all apps) -> Prod'
+        environment: fabric-rayfin-prod
+        pool: { vmImage: 'ubuntu-latest' }
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: templates/deploy-rayfin-app.yml

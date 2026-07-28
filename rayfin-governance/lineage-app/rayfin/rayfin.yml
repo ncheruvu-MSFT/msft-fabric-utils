@@ -1,0 +1,36 @@
+id: lineage-app
+name: Lineage Graph App
+version: 0.1.0
+deployment:
+  workspaceId: ${FABRIC_WORKSPACE_ID}
+  capacityId: ${FABRIC_CAPACITY_ID}
+services:
+  data:
+    enabled: true
+    dialect: mssql
+  auth:
+    enabled: true
+    expiryInMinutes: 60
+    refreshToken:
+      lifetimeInDays: 30
+    scopes:
+      - read:data
+      - write:data
+    allowedRedirectUris:
+      - http://localhost:5173
+      - http://localhost:5173/auth/callback
+      - https://right-hawk-acfacb8b8e-westus2.webapp.fabricapps.net
+    password:
+      enabled: true
+    fabric:
+      enabled: true
+  staticHosting:
+    enabled: true
+    root: .
+    folder: dist
+    buildCommand: npm run build
+    indexDocument: index.html
+  storage:
+    enabled: false
+  functions:
+    enabled: false

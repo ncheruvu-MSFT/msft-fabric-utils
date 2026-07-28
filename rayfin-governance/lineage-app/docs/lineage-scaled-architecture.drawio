@@ -1,0 +1,87 @@
+<mxfile host="app.diagrams.net" agent="copilot" version="24.0.0">
+  <diagram id="lineage-scaled-arch" name="Scaled Lineage on Fabric + Rayfin">
+    <mxGraphModel dx="1400" dy="900" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1080" math="0" background="#16213e">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Canvas -->
+        <mxCell id="canvas" value="" style="rounded=1;arcSize=3;fillColor=#1a1a2e;strokeColor=#2a2a4a;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="30" width="1340" height="1020" as="geometry" />
+        </mxCell>
+        <mxCell id="title" value="Scaled Lineage — Microsoft Fabric + Rayfin" style="text;html=1;align=left;fontColor=#FFFFFF;fontSize=24;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="72" y="44" width="900" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Incremental harvest → lake-scale Delta store → k-hop serving in the Rayfin backend → progressive-expand UI. Only subgraphs ever reach the browser." style="text;html=1;align=left;fontColor=#88AADD;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="72" y="82" width="1200" height="22" as="geometry" />
+        </mxCell>
+
+        <!-- ============ Governance band (left rail, full height) ============ -->
+        <mxCell id="band_gov" value="Governance &amp; identity (inherited from Fabric)" style="rounded=1;arcSize=4;fillColor=#0d2e1a;strokeColor=#2E7D32;strokeWidth=1;verticalAlign=top;align=center;fontColor=#66BB88;fontSize=11;fontStyle=1;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="70" y="120" width="150" height="820" as="geometry" />
+        </mxCell>
+        <mxCell id="g1" value="Fabric SSO&#10;(Entra ID)" style="rounded=1;fillColor=#123b22;strokeColor=#3f9950;fontColor=#CDEFD6;fontSize=10;" vertex="1" parent="1"><mxGeometry x="86" y="170" width="118" height="52" as="geometry" /></mxCell>
+        <mxCell id="g2" value="Workspace RBAC&#10;+ sensitivity labels" style="rounded=1;fillColor=#123b22;strokeColor=#3f9950;fontColor=#CDEFD6;fontSize=10;" vertex="1" parent="1"><mxGeometry x="86" y="330" width="118" height="52" as="geometry" /></mxCell>
+        <mxCell id="g3" value="F-SKU capacity&#10;pause / autoscale" style="rounded=1;fillColor=#123b22;strokeColor=#3f9950;fontColor=#CDEFD6;fontSize=10;" vertex="1" parent="1"><mxGeometry x="86" y="520" width="118" height="52" as="geometry" /></mxCell>
+        <mxCell id="g4" value="Row-level policy&#10;(@role on edges)" style="rounded=1;fillColor=#123b22;strokeColor=#3f9950;fontColor=#CDEFD6;fontSize=10;" vertex="1" parent="1"><mxGeometry x="86" y="700" width="118" height="52" as="geometry" /></mxCell>
+
+        <!-- ============ Tier 1: Sources ============ -->
+        <mxCell id="band_src" value="Metadata sources — read already-computed lineage, not raw data" style="rounded=1;arcSize=6;fillColor=#0d1a2e;strokeColor=#283593;strokeWidth=1;verticalAlign=top;align=left;fontColor=#6688BB;fontSize=12;fontStyle=1;spacingLeft=12;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="245" y="120" width="1085" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="s1" value="Databricks Unity Catalog&#10;system.access.table_lineage&#10;/ column_lineage" style="rounded=1;fillColor=#12335e;strokeColor=#4a7ad0;fontColor=#DCEBFF;fontSize=10;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="265" y="158" width="205" height="56" as="geometry" /></mxCell>
+        <mxCell id="s2" value="SQL / Synapse&#10;system views + DMVs" style="rounded=1;fillColor=#12294a;strokeColor=#3a5a99;fontColor=#CFE0FF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="490" y="158" width="190" height="56" as="geometry" /></mxCell>
+        <mxCell id="s3" value="ADF / Fabric pipelines&#10;run &amp; activity events" style="rounded=1;fillColor=#12294a;strokeColor=#3a5a99;fontColor=#CFE0FF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="700" y="158" width="190" height="56" as="geometry" /></mxCell>
+        <mxCell id="s4" value="Power BI&#10;scanner API" style="rounded=1;fillColor=#12294a;strokeColor=#3a5a99;fontColor=#CFE0FF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="910" y="158" width="170" height="56" as="geometry" /></mxCell>
+        <mxCell id="s5" value="OneLake&#10;(50 lakehouses,&#10;100s of tables)" style="rounded=1;fillColor=#12335e;strokeColor=#4a7ad0;fontColor=#DCEBFF;fontSize=10;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1100" y="158" width="205" height="56" as="geometry" /></mxCell>
+
+        <!-- ============ Tier 2: Ingest ============ -->
+        <mxCell id="band_ing" value="Incremental ingest — scheduled Fabric Data Pipeline + Spark notebook harvesters (watermarked, parallel per source)" style="rounded=1;arcSize=5;fillColor=#1a0d3e;strokeColor=#6644AA;strokeWidth=1;verticalAlign=top;align=left;fontColor=#AA88DD;fontSize=12;fontStyle=1;spacingLeft=12;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="245" y="255" width="1085" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="i1" value="Fabric Data Pipeline&#10;(hourly / daily trigger)" style="rounded=1;fillColor=#2a1550;strokeColor=#8a5abf;fontColor=#E6D5F8;fontSize=10;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="270" y="298" width="200" height="56" as="geometry" /></mxCell>
+        <mxCell id="i2" value="Spark harvesters&#10;watermark by event_time&#10;(only new/changed edges)" style="rounded=1;fillColor=#2a1550;strokeColor=#7a5abf;fontColor=#D9C8F5;fontSize=10;" vertex="1" parent="1"><mxGeometry x="520" y="298" width="230" height="56" as="geometry" /></mxCell>
+        <mxCell id="i3" value="Normalize → LineageEdge&#10;(common/schema.py)&#10;+ MERGE upsert" style="rounded=1;fillColor=#2a1550;strokeColor=#7a5abf;fontColor=#D9C8F5;fontSize=10;" vertex="1" parent="1"><mxGeometry x="800" y="298" width="230" height="56" as="geometry" /></mxCell>
+        <mxCell id="i4" value="dedup by&#10;(src,tgt,process)" style="rounded=1;fillColor=#241048;strokeColor=#6a4aaf;fontColor=#D2C0EE;fontSize=10;" vertex="1" parent="1"><mxGeometry x="1080" y="298" width="150" height="56" as="geometry" /></mxCell>
+
+        <!-- ============ Tier 3: Lake store ============ -->
+        <mxCell id="band_lake" value="Lake-scale store — OneLake Delta (the source of truth; scales to millions of edges)" style="rounded=1;arcSize=6;fillColor=#0d1a2e;strokeColor=#283593;strokeWidth=1;verticalAlign=top;align=left;fontColor=#6688BB;fontSize=12;fontStyle=1;spacingLeft=12;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="245" y="410" width="1085" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="l1" value="OneLake Delta  lineage.edges&#10;partitioned by catalog / schema / date&#10;Z-ORDER (source_qname, target_qname)" style="rounded=1;fillColor=#12294a;strokeColor=#3a5a99;fontColor=#CFE0FF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="290" y="448" width="330" height="60" as="geometry" /></mxCell>
+        <mxCell id="l2" value="OneLake Delta  column_edges&#10;column-level from → to + transform" style="rounded=1;fillColor=#12294a;strokeColor=#3a5a99;fontColor=#CFE0FF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="650" y="448" width="300" height="60" as="geometry" /></mxCell>
+        <mxCell id="l3" value="adjacency index&#10;(precomputed neighbours + level)" style="rounded=1;fillColor=#12294a;strokeColor=#3a5a99;fontColor=#CFE0FF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="980" y="448" width="250" height="60" as="geometry" /></mxCell>
+
+        <!-- ============ Tier 4: Serve (Rayfin backend) ============ -->
+        <mxCell id="band_serve" value="Serving — Rayfin app backend (Fabric SQL DB + auto GraphQL). Answers &quot;give me the k-hop subgraph around asset X&quot;." style="rounded=1;arcSize=5;fillColor=#1a0d2e;strokeColor=#7B1FA2;strokeWidth=1;verticalAlign=top;align=left;fontColor=#BB88DD;fontSize=12;fontStyle=1;spacingLeft=12;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="245" y="555" width="1085" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="v1" value="Rayfin Fabric SQL DB&#10;hot / recent edges + adjacency&#10;(mirrored from OneLake)" style="rounded=1;fillColor=#2a1540;strokeColor=#b070d0;fontColor=#F0E0FA;fontSize=10;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="270" y="598" width="240" height="66" as="geometry" /></mxCell>
+        <mxCell id="v2" value="k-hop neighbourhood resolver&#10;(GraphQL: edgesAround(qname, depth))&#10;+ column trace on subgraph" style="rounded=1;fillColor=#2a1540;strokeColor=#b070d0;fontColor=#F0E0FA;fontSize=10;" vertex="1" parent="1"><mxGeometry x="540" y="598" width="290" height="66" as="geometry" /></mxCell>
+        <mxCell id="v3" value="precomputed levels&#10;+ pagination / search&#10;(server-side layout hints)" style="rounded=1;fillColor=#2a1540;strokeColor=#9a5abf;fontColor=#EAD8F6;fontSize=10;" vertex="1" parent="1"><mxGeometry x="860" y="598" width="240" height="66" as="geometry" /></mxCell>
+        <mxCell id="v4" value="@role RLS&#10;on edges" style="rounded=1;fillColor=#241048;strokeColor=#6a4aaf;fontColor=#D2C0EE;fontSize=10;" vertex="1" parent="1"><mxGeometry x="1130" y="598" width="100" height="66" as="geometry" /></mxCell>
+
+        <!-- ============ Tier 5: App ============ -->
+        <mxCell id="band_app" value="Rayfin app (browser) — only ever holds a subgraph" style="rounded=1;arcSize=6;fillColor=#0d1b3e;strokeColor=#1565C0;strokeWidth=1;verticalAlign=top;align=left;fontColor=#4488CC;fontSize=12;fontStyle=1;spacingLeft=12;spacingTop=6;" vertex="1" parent="1">
+          <mxGeometry x="245" y="720" width="1085" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="a1" value="Search / pick a focus asset" style="rounded=1;fillColor=#12335e;strokeColor=#2f74d0;fontColor=#CFE0FF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="270" y="758" width="220" height="56" as="geometry" /></mxCell>
+        <mxCell id="a2" value="Fetch k-hop subgraph&#10;(GraphQL) — expand on click" style="rounded=1;fillColor=#12335e;strokeColor=#2f74d0;fontColor=#CFE0FF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="510" y="758" width="250" height="56" as="geometry" /></mxCell>
+        <mxCell id="a3" value="assignLevels / traceColumn&#10;on the subgraph only" style="rounded=1;fillColor=#12335e;strokeColor=#2f74d0;fontColor=#CFE0FF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="780" y="758" width="240" height="56" as="geometry" /></mxCell>
+        <mxCell id="a4" value="virtualized table&#10;+ layered SVG" style="rounded=1;fillColor=#12335e;strokeColor=#2f74d0;fontColor=#CFE0FF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="1040" y="758" width="190" height="56" as="geometry" /></mxCell>
+
+        <!-- ============ Flow arrows ============ -->
+        <mxCell id="f1" value="pull (incremental)" style="endArrow=block;html=1;strokeColor=#4499DD;strokeWidth=2;fontColor=#88BBEE;fontSize=11;labelBackgroundColor=#1a1a2e;" edge="1" parent="1" source="band_src" target="band_ing"><mxGeometry relative="1" as="geometry"><mxPoint x="787" y="225" as="sourcePoint" /><mxPoint x="787" y="255" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2" value="MERGE into Delta" style="endArrow=block;html=1;strokeColor=#4499DD;strokeWidth=2;fontColor=#88BBEE;fontSize=11;labelBackgroundColor=#1a1a2e;" edge="1" parent="1" source="band_ing" target="band_lake"><mxGeometry relative="1" as="geometry"><mxPoint x="787" y="375" as="sourcePoint" /><mxPoint x="787" y="410" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f3" value="mirror hot edges + adjacency" style="endArrow=block;html=1;strokeColor=#55BB66;strokeWidth=2;fontColor=#88DD99;fontSize=11;labelBackgroundColor=#1a1a2e;" edge="1" parent="1" source="band_lake" target="band_serve"><mxGeometry relative="1" as="geometry"><mxPoint x="787" y="520" as="sourcePoint" /><mxPoint x="787" y="555" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f4" value="GraphQL: k-hop subgraph only" style="endArrow=block;startArrow=open;html=1;strokeColor=#4499DD;strokeWidth=2;fontColor=#88BBEE;fontSize=11;labelBackgroundColor=#1a1a2e;" edge="1" parent="1" source="band_serve" target="band_app"><mxGeometry relative="1" as="geometry"><mxPoint x="787" y="685" as="sourcePoint" /><mxPoint x="787" y="720" as="targetPoint" /></mxGeometry></mxCell>
+
+        <!-- Key principle callout -->
+        <mxCell id="key" value="Scale principle: the Delta lake holds millions of edges; the Rayfin SQL DB serves only k-hop neighbourhoods; the browser renders only what you're looking at. Cost scales with queries, not with catalog size." style="text;html=1;align=left;fontColor=#CCCCDD;fontSize=11;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="245" y="860" width="1085" height="40" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

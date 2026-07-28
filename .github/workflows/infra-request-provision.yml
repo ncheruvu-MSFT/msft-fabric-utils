@@ -1,0 +1,54 @@
+# ============================================================
+# Infra Request — provisioning bridge (Rayfin -> GitHub Issues)
+#
+# Polls the infra-request-app Rayfin backend for APPROVED requests that have not
+# yet been pushed to GitHub, opens a labelled GitHub issue for each, and stamps
+# the request back to `Submitted` with the issue URL/number.
+#
+# The form (Fabric App) never holds a GitHub token — the token lives here in the
+# Actions runner. Authorization for the request data is enforced server-side by
+# the Rayfin `@authenticated` policies on the InfraRequest entity.
+#
+# ── Setup ───────────────────────────────────────────────────
+#   Secrets (Settings -> Secrets and variables -> Actions -> Secrets):
+#     RAYFIN_API_TOKEN   bearer token whose claims map to the `pipeline` role
+#                        (read all requests + update GitHub fields)
+#   Variables (… -> Variables):
+#     RAYFIN_API_URL     base URL of the deployed Rayfin backend, no trailing /
+#                        e.g. https://<app>.webapp.fabricapps.net
+#
+#   The built-in GITHUB_TOKEN is used to open issues (needs issues: write).
+# ============================================================
+name: Infra Request provisioning
+
+on:
+  schedule:
+    - cron: '*/15 * * * *' # every 15 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: infra-request-provision
+  cancel-in-progress: false
+
+jobs:
+  provision:
+    name: Open issues for approved requests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Provision approved requests
+        env:
+          RAYFIN_API_URL: ${{ vars.RAYFIN_API_URL }}
+          RAYFIN_API_TOKEN: ${{ secrets.RAYFIN_API_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_LABEL: infra-request
+        run: node rayfin-governance/infra-request-app/scripts/provision-requests.mjs

@@ -1,0 +1,32 @@
+// Measure Continuous Access Evaluation (CAE) coverage of Microsoft Fabric / Power BI
+// sign-ins over the last 7 days. Anything < 95% IsCaeToken is worth investigating —
+// usually older clients, library-based PowerShell scripts using stale MSAL, or
+// service principals that haven't opted into CAE.
+//
+// Requires: SigninLogs ingested into Log Analytics (Diagnostic settings on the tenant).
+
+let lookback = 7d;
+let powerBiAppId = "00000009-0000-0000-c000-000000000000";
+SigninLogs
+| where TimeGenerated > ago(lookback)
+| where AppId == powerBiAppId
+| extend isCae = tobool(coalesce(tostring(parse_json(tostring(AuthenticationDetails))[0].IsCaeToken), "false"))
+| extend isCaeSimple = iif(isnotempty(SessionLifetimePolicies), true, isCae)
+| summarize
+    totalSignIns       = count(),
+    caeSignIns         = countif(isCaeSimple == true),
+    nonCaeSignIns      = countif(isCaeSimple == false),
+    caeCoveragePercent = round(100.0 * countif(isCaeSimple == true) / count(), 2)
+    by bin(TimeGenerated, 1d), ResultType
+| order by TimeGenerated desc, ResultType asc
+
+// Drill-down: which client app / user agent is responsible for non-CAE sign-ins?
+//
+// SigninLogs
+// | where TimeGenerated > ago(7d)
+// | where AppId == "00000009-0000-0000-c000-000000000000"
+// | extend isCaeSimple = iif(isnotempty(SessionLifetimePolicies), true,
+//                             tobool(coalesce(tostring(parse_json(tostring(AuthenticationDetails))[0].IsCaeToken), "false")))
+// | where isCaeSimple == false
+// | summarize signIns = count() by ClientAppUsed, UserAgent, AppDisplayName
+// | order by signIns desc

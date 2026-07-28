@@ -1,0 +1,55 @@
+{
+  "comment": "Declared cross-system lineage edges that no single DB catalog can infer. In a real estate these come from your ETL (ADF copy activity, Synapse pipeline, etc.). Placeholders are substituted by harvesters/declared.py using env vars from .env.cloud.",
+  "edges": [
+    {
+      "source_qname": "mssql://${SQL_SERVER_FQDN}/${SQL_DATABASE}/crm/customers",
+      "source_type":  "azure_sql_table",
+      "target_qname": "cosmos://${COSMOS_ENDPOINT}/${COSMOS_DATABASE}/web_sessions",
+      "target_type":  "azure_cosmosdb_sqlapi_collection",
+      "process_name": "adf:enrich_sessions_with_customer",
+      "process_type": "adf_copy",
+      "artifact_ref": "cross_system_edges.json",
+      "extra": { "owner": "data-engineering", "schedule": "hourly" }
+    },
+    {
+      "source_qname": "oracle://${ORACLE_DSN}/scm/supplier_performance_v",
+      "source_type":  "oracle_view",
+      "target_qname": "postgres://${PG_SERVER_FQDN}/${PG_DATABASE}/hr/employees",
+      "target_type":  "azure_postgresql_table",
+      "process_name": "synapse:ship_to_hr_attribution",
+      "process_type": "fabric_pipeline_activity",
+      "artifact_ref": "cross_system_edges.json",
+      "extra": { "owner": "supply-chain", "schedule": "daily" }
+    },
+    {
+      "source_qname": "cosmos://${COSMOS_ENDPOINT}/${COSMOS_DATABASE}/iot_telemetry",
+      "source_type":  "azure_cosmosdb_sqlapi_collection",
+      "target_qname": "mssql://${SQL_SERVER_FQDN}/${SQL_DATABASE}/gold/customer_revenue_mart",
+      "target_type":  "azure_sql_view",
+      "process_name": "spark:iot_revenue_join",
+      "process_type": "spark_write",
+      "artifact_ref": "cross_system_edges.json",
+      "extra": { "owner": "analytics" }
+    },
+    {
+      "source_qname": "cosmos://${COSMOS_ENDPOINT}/${COSMOS_DATABASE}/iot_telemetry",
+      "source_type":  "azure_cosmosdb_sqlapi_collection",
+      "target_qname": "databricks://${DATABRICKS_HOST}/${DATABRICKS_CATALOG}/${DATABRICKS_SCHEMA}/events",
+      "target_type":  "databricks_table",
+      "process_name": "adf:iot_to_databricks_bronze",
+      "process_type": "adf_copy",
+      "artifact_ref": "cross_system_edges.json",
+      "extra": { "owner": "platform-eng", "schedule": "every 15 min" }
+    },
+    {
+      "source_qname": "databricks://${DATABRICKS_HOST}/${DATABRICKS_CATALOG}/${DATABRICKS_SCHEMA}/device_event_summary_v",
+      "source_type":  "databricks_view",
+      "target_qname": "mssql://${SQL_SERVER_FQDN}/${SQL_DATABASE}/gold/customer_revenue_mart",
+      "target_type":  "azure_sql_view",
+      "process_name": "databricks_job:push_summary_to_gold",
+      "process_type": "spark_write",
+      "artifact_ref": "cross_system_edges.json",
+      "extra": { "owner": "analytics" }
+    }
+  ]
+}

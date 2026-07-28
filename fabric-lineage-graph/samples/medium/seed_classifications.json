@@ -1,0 +1,16 @@
+{
+  "comment": "Medium sample — PII at the bronze level flows through silver -> gold + spark gold.",
+  "classifications": {
+    "mssql://unknown/unknown/bronze/crm_customers": ["MICROSOFT.PERSONAL.EMAIL"],
+    "mssql://unknown/unknown/bronze/crm_orders":    ["MICROSOFT.FINANCIAL.CREDIT_CARD_NUMBER"]
+  },
+  "expected_edges_tsql":     3,
+  "expected_edges_notebook": 1,
+  "expected_labels": {
+    "mssql://unknown/unknown/bronze/crm_customers":        "Confidential-PII",
+    "mssql://unknown/unknown/bronze/crm_orders":           "Highly-Confidential-Restricted",
+    "mssql://unknown/unknown/silver/customer_orders":      "Highly-Confidential-Restricted",
+    "mssql://unknown/unknown/gold/customer_orders_view":   "Highly-Confidential-Restricted",
+    "lakehouse://gold.customer_metrics":                   "Highly-Confidential-Restricted"
+  }
+}
