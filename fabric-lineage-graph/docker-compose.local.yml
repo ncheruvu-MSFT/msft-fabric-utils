@@ -1,0 +1,37 @@
+# Local-only test stack: Streamlit + stub UDF, no Fabric / Purview required.
+# Usage:
+#   docker compose -f fabric-lineage-graph/docker-compose.local.yml up --build
+# Then open http://localhost:8501
+#
+# The lineage page reads out/cloud/edges.json (produced by
+# `python -m tests.run_cloud_validation`) so you can demo the column-level
+# graph offline. To use a different snapshot, set LINEAGE_LOCAL_EDGES_PATH.
+services:
+  udf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fabric-lineage-graph:local
+    container_name: lineage-udf
+    command: ["uvicorn", "api.stub_udf:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    image: fabric-lineage-graph:local
+    container_name: lineage-app
+    depends_on:
+      udf:
+        condition: service_healthy
+    environment:
+      LINEAGE_LOCAL_EDGES_PATH: /app/out/cloud/edges.json
+      UDF_BASE_URL: http://udf:8000
+    volumes:
+      - ./out:/app/out:ro
+    ports:
+      - "8501:8501"

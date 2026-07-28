@@ -1,0 +1,64 @@
+{
+  "name": "Governed Analytics Assistant",
+  "description": "NL -> SQL/DAX/KQL assistant that answers only from governed Fabric sources and respects semantic-model definitions.",
+  "schemaNote": "Reference config for the Fabric Data Agent demo. Field names are illustrative; create the agent in the Fabric portal and transcribe these settings into the Instructions, data-source notes, and example queries.",
+  "dataSources": [
+    {
+      "type": "Lakehouse",
+      "name": "SalesLakehouse",
+      "purpose": "Row-level SQL access to the star schema.",
+      "tables": ["FactSales", "DimDate", "DimProduct", "DimRegion", "DimCustomer"],
+      "joinKeys": [
+        "FactSales.DateKey = DimDate.DateKey",
+        "FactSales.ProductKey = DimProduct.ProductKey",
+        "FactSales.RegionKey = DimRegion.RegionKey",
+        "FactSales.CustomerKey = DimCustomer.CustomerKey"
+      ],
+      "notes": "Revenue is net of discount. Never compute revenue as ListPrice * Quantity."
+    },
+    {
+      "type": "SemanticModel",
+      "name": "SalesSemanticModel",
+      "purpose": "Governed DAX measures and KPIs. Prefer this for any measure/KPI question.",
+      "measures": [
+        "Total Revenue", "Total Cost", "Gross Margin", "Gross Margin %",
+        "Units Sold", "Order Count", "Average Order Value",
+        "Revenue PY", "Revenue YoY %", "Revenue YTD"
+      ]
+    }
+  ],
+  "guardrails": {
+    "noInventedData": true,
+    "refusalMessage": "That data isn't available in the connected sources, so I can't answer it.",
+    "clarifyOnAmbiguity": true,
+    "alwaysStateTimeScope": true,
+    "revenueIsNetOfDiscount": true
+  },
+  "exampleQueries": [
+    {
+      "question": "What was total revenue in 2025 and how did it grow vs 2024?",
+      "language": "DAX",
+      "query": "EVALUATE ROW(\"Revenue 2025\", CALCULATE([Total Revenue], DimDate[Year]=2025), \"Revenue 2024\", CALCULATE([Total Revenue], DimDate[Year]=2024), \"YoY %\", CALCULATE([Revenue YoY %], DimDate[Year]=2025))"
+    },
+    {
+      "question": "Show revenue and gross margin % by product category for 2025.",
+      "language": "DAX",
+      "query": "EVALUATE SUMMARIZECOLUMNS(DimProduct[Category], FILTER(DimDate, DimDate[Year]=2025), \"Revenue\", [Total Revenue], \"Margin %\", [Gross Margin %]) ORDER BY [Revenue] DESC"
+    },
+    {
+      "question": "Top 5 customers by revenue in 2025.",
+      "language": "SQL",
+      "query": "SELECT TOP 5 c.CustomerName, SUM(f.Revenue) AS Revenue FROM FactSales f JOIN DimDate d ON f.DateKey = d.DateKey JOIN DimCustomer c ON f.CustomerKey = c.CustomerKey WHERE d.Year = 2025 GROUP BY c.CustomerName ORDER BY Revenue DESC"
+    },
+    {
+      "question": "Monthly revenue trend for the Mobile category in 2025.",
+      "language": "SQL",
+      "query": "SELECT d.MonthNumber, d.MonthName, SUM(f.Revenue) AS Revenue FROM FactSales f JOIN DimDate d ON f.DateKey = d.DateKey JOIN DimProduct p ON f.ProductKey = p.ProductKey WHERE d.Year = 2025 AND p.Category = 'Mobile' GROUP BY d.MonthNumber, d.MonthName ORDER BY d.MonthNumber"
+    },
+    {
+      "question": "Which region had the highest average discount in 2025?",
+      "language": "SQL",
+      "query": "SELECT r.Region, AVG(f.Discount) AS AvgDiscount FROM FactSales f JOIN DimDate d ON f.DateKey = d.DateKey JOIN DimRegion r ON f.RegionKey = r.RegionKey WHERE d.Year = 2025 GROUP BY r.Region ORDER BY AvgDiscount DESC"
+    }
+  ]
+}

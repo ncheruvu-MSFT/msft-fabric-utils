@@ -1,0 +1,81 @@
+{
+  "ontology": "EnterpriseSalesIQ",
+  "description": "Business ontology for the Fabric IQ demo. Concepts and relationships the assistant reasons over; each concept maps to underlying Lakehouse columns / semantic-model measures.",
+  "concepts": [
+    {
+      "name": "Customer",
+      "description": "An organization that purchases products.",
+      "attributes": [
+        { "name": "CustomerName", "mapsTo": "DimCustomer.CustomerName" },
+        { "name": "Segment", "mapsTo": "DimCustomer.Segment", "values": ["Enterprise", "Mid-Market", "Small Business"] }
+      ],
+      "key": { "mapsTo": "DimCustomer.CustomerKey" }
+    },
+    {
+      "name": "Product",
+      "description": "An item offered for sale, organized in a category hierarchy.",
+      "hierarchy": ["Category", "Subcategory", "ProductName"],
+      "attributes": [
+        { "name": "ProductName", "mapsTo": "DimProduct.ProductName" },
+        { "name": "Subcategory", "mapsTo": "DimProduct.Subcategory" },
+        { "name": "Category", "mapsTo": "DimProduct.Category" },
+        { "name": "StandardCost", "mapsTo": "DimProduct.StandardCost" },
+        { "name": "ListPrice", "mapsTo": "DimProduct.ListPrice" }
+      ],
+      "key": { "mapsTo": "DimProduct.ProductKey" }
+    },
+    {
+      "name": "Region",
+      "description": "Geography where a sale occurs.",
+      "hierarchy": ["Region", "Country"],
+      "attributes": [
+        { "name": "Region", "mapsTo": "DimRegion.Region" },
+        { "name": "Country", "mapsTo": "DimRegion.Country" },
+        { "name": "SalesManager", "mapsTo": "DimRegion.SalesManager" }
+      ],
+      "key": { "mapsTo": "DimRegion.RegionKey" }
+    },
+    {
+      "name": "Order",
+      "description": "A purchase event; the grain of the sales fact.",
+      "mapsTo": "FactSales",
+      "key": { "mapsTo": "FactSales.SalesID" },
+      "attributes": [
+        { "name": "Quantity", "mapsTo": "FactSales.Quantity" },
+        { "name": "Discount", "mapsTo": "FactSales.Discount" }
+      ]
+    },
+    {
+      "name": "Revenue",
+      "description": "Money earned, net of discount.",
+      "type": "Metric",
+      "mapsTo": "measure: Total Revenue",
+      "related": ["Cost", "GrossMargin", "Discount"]
+    },
+    {
+      "name": "Cost",
+      "type": "Metric",
+      "mapsTo": "measure: Total Cost"
+    },
+    {
+      "name": "GrossMargin",
+      "type": "Metric",
+      "mapsTo": "measure: Gross Margin",
+      "formula": "Revenue - Cost"
+    }
+  ],
+  "relationships": [
+    { "from": "Customer", "verb": "places", "to": "Order" },
+    { "from": "Order", "verb": "isFor", "to": "Product" },
+    { "from": "Order", "verb": "occursIn", "to": "Region" },
+    { "from": "Order", "verb": "generates", "to": "Revenue" },
+    { "from": "Order", "verb": "occursOn", "to": "Date" }
+  ],
+  "kpis": [
+    { "name": "Total Revenue", "mapsTo": "measure: Total Revenue", "goodDirection": "up" },
+    { "name": "Gross Margin %", "mapsTo": "measure: Gross Margin %", "goodDirection": "up" },
+    { "name": "Revenue YoY %", "mapsTo": "measure: Revenue YoY %", "goodDirection": "up" },
+    { "name": "Average Order Value", "mapsTo": "measure: Average Order Value", "goodDirection": "up" },
+    { "name": "Average Discount %", "mapsTo": "measure: Average Discount %", "goodDirection": "down" }
+  ]
+}

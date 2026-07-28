@@ -1,0 +1,28 @@
+requests>=2.32
+azure-identity>=1.17
+azure-keyvault-secrets>=4.8
+python-dotenv>=1.0
+pyyaml>=6.0
+
+# Lineage parsing
+sqlglot>=25.0
+nbformat>=5.10
+
+# Graph + viz
+networkx>=3.3
+pyvis>=0.3.2
+
+# Fabric / Lakehouse IO (local dev — inside Fabric notebooks use built-in pyspark)
+deltalake>=0.19
+pandas>=2.2
+
+# Streamlit Data App
+streamlit>=1.36
+
+# Live cloud-tier harvesters (samples/cloud/) -- optional, install if you
+# plan to run tests/run_cloud_validation.py
+pyodbc>=5.1            # Azure SQL / Synapse Serverless (needs ODBC Driver 18)
+psycopg[binary]>=3.2   # Postgres Flex
+azure-cosmos>=4.7      # Cosmos DB SQL API
+oracledb>=2.4          # Oracle (BYO instance via ORACLE_DSN)
+requests>=2.32         # Databricks SQL Statement Execution API

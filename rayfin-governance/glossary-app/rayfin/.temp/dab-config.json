@@ -1,0 +1,285 @@
+{
+  "$schema": "https://github.com/Azure/data-api-builder/releases/download/v1.5.56/dab.draft.schema.json",
+  "entities": {
+    "Term": {
+      "source": "Terms",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "update",
+              "policy": {
+                "database": "(@claims.role eq 'steward') or (@claims.sub eq @item.submittedBySub)"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "(@claims.role eq 'steward') or (@claims.sub eq @item.submittedBySub)"
+              }
+            },
+            "create",
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "name": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "definition": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": false
+          },
+          "domainId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "status": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "submittedBySub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "approvedBySub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "purviewQualifiedName": {
+            "dbType": "NVARCHAR(400)",
+            "nullable": true
+          },
+          "auditCreatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          },
+          "auditUpdatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": true
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_Terms",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "Steward": {
+      "source": "Stewards",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "create",
+              "policy": {
+                "database": "@claims.role eq 'domain-admin'"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "@claims.role eq 'domain-admin'"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "@claims.role eq 'domain-admin'"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "domainId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "userSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "userEmail": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "role": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_Stewards",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "Domain": {
+      "source": "Domains",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "create",
+              "policy": {
+                "database": "(@claims.role eq 'domain-admin') or (@claims.sub eq @item.ownerSub)"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "(@claims.role eq 'domain-admin') or (@claims.sub eq @item.ownerSub)"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "(@claims.role eq 'domain-admin') or (@claims.sub eq @item.ownerSub)"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "name": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "description": {
+            "dbType": "NVARCHAR(1000)",
+            "nullable": true
+          },
+          "parentId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "ownerSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "isActive": {
+            "dbType": "BIT",
+            "nullable": false
+          },
+          "auditCreatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          },
+          "auditUpdatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": true
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_Domains",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "ApprovalRequest": {
+      "source": "ApprovalRequests",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "update",
+              "policy": {
+                "database": "(@claims.role eq 'steward') or (@claims.sub eq @item.assigneeSub)"
+              }
+            },
+            "create",
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "targetType": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "targetId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "workflowName": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "status": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "requesterSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "assigneeSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "decisionNote": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          },
+          "auditCreatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          },
+          "decidedAt": {
+            "dbType": "DATETIME2",
+            "nullable": true
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_ApprovalRequests",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "comment": "Sensitivity-relevant classifications for the cloud-tier sources. Asset paths use the canonical qualifiedName each live harvester emits, with ${VAR} placeholders substituted from .env.cloud at validation time.",
+  "classifications": {
+    "mssql://${SQL_SERVER_FQDN}/${SQL_DATABASE}/crm/customers": [
+      "MICROSOFT.PERSONAL.EMAIL",
+      "MICROSOFT.PERSONAL.PHONE_NUMBER",
+      "MICROSOFT.GOVERNMENT.US.SOCIAL_SECURITY_NUMBER"
+    ],
+    "mssql://${SQL_SERVER_FQDN}/${SQL_DATABASE}/crm/orders": [
+      "MICROSOFT.FINANCIAL.CREDIT_CARD_NUMBER"
+    ],
+    "postgres://${PG_SERVER_FQDN}/${PG_DATABASE}/hr/employees": [
+      "MICROSOFT.PERSONAL.EMAIL"
+    ],
+    "postgres://${PG_SERVER_FQDN}/${PG_DATABASE}/hr/compensation": [
+      "HR_COMPENSATION"
+    ],
+    "oracle://${ORACLE_DSN}/scm/suppliers": [
+      "MICROSOFT.PERSONAL.EMAIL"
+    ],
+    "cosmos://${COSMOS_ENDPOINT}/${COSMOS_DATABASE}/web_sessions": [],
+    "cosmos://${COSMOS_ENDPOINT}/${COSMOS_DATABASE}/iot_telemetry": [],
+    "databricks://${DATABRICKS_HOST}/${DATABRICKS_CATALOG}/${DATABRICKS_SCHEMA}/devices": [],
+    "databricks://${DATABRICKS_HOST}/${DATABRICKS_CATALOG}/${DATABRICKS_SCHEMA}/events": []
+  },
+  "seed_labels": {},
+  "expected_labels_minimums": {
+    "mssql://${SQL_SERVER_FQDN}/${SQL_DATABASE}/silver/customer_360":           "Confidential-PII",
+    "mssql://${SQL_SERVER_FQDN}/${SQL_DATABASE}/gold/customer_revenue_mart":    "Highly-Confidential-Restricted",
+    "postgres://${PG_SERVER_FQDN}/${PG_DATABASE}/hr/employee_compensation_v":   "Highly-Confidential-Restricted",
+    "postgres://${PG_SERVER_FQDN}/${PG_DATABASE}/hr/payroll_summary_v":         "Highly-Confidential-Restricted"
+  },
+  "expected_violations": []
+}

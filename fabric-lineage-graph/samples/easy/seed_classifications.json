@@ -1,0 +1,13 @@
+{
+  "comment": "Seed Purview/MIP classifications for the easy sample. Drives label propagation tests.",
+  "classifications": {
+    "mssql://unknown/unknown/bronze/crm_customers": [
+      "MICROSOFT.PERSONAL.EMAIL"
+    ]
+  },
+  "expected_edges": 1,
+  "expected_labels": {
+    "mssql://unknown/unknown/bronze/crm_customers": "Confidential-PII",
+    "mssql://unknown/unknown/silver/customers": "Confidential-PII"
+  }
+}

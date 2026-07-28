@@ -1,0 +1,318 @@
+{
+  "assets": {
+    "spark://silver.orders_valid": {
+      "label": "silver.orders_valid",
+      "type": "silver"
+    },
+    "spark://gold.fact_sales": {
+      "label": "gold.fact_sales",
+      "type": "gold"
+    },
+    "spark://gold.fact_sales_secured": {
+      "label": "gold.fact_sales_secured",
+      "type": "gold"
+    },
+    "spark://gold.agg_sales_region": {
+      "label": "gold.agg_sales_region",
+      "type": "gold"
+    },
+    "spark://bronze.hr_compensation": {
+      "label": "bronze.hr_compensation",
+      "type": "bronze"
+    },
+    "spark://silver.employee_engagement": {
+      "label": "silver.employee_engagement",
+      "type": "silver"
+    },
+    "mssql://fabric/warehouse/raw/crm/customers": {
+      "label": "customers",
+      "type": "bronze"
+    },
+    "mssql://fabric/warehouse/bronze/crm_customers": {
+      "label": "crm_customers",
+      "type": "bronze"
+    },
+    "mssql://fabric/warehouse/raw/erp/invoices": {
+      "label": "invoices",
+      "type": "bronze"
+    },
+    "mssql://fabric/warehouse/bronze/erp_invoices": {
+      "label": "erp_invoices",
+      "type": "bronze"
+    },
+    "mssql://fabric/warehouse/raw/web/sessions": {
+      "label": "sessions",
+      "type": "bronze"
+    },
+    "mssql://fabric/warehouse/bronze/web_sessions": {
+      "label": "web_sessions",
+      "type": "bronze"
+    },
+    "mssql://fabric/warehouse/raw/hr/compensation": {
+      "label": "compensation",
+      "type": "bronze"
+    },
+    "mssql://fabric/warehouse/bronze/hr_compensation": {
+      "label": "hr_compensation",
+      "type": "bronze"
+    },
+    "mssql://fabric/warehouse/silver/customer_360": {
+      "label": "customer_360",
+      "type": "silver"
+    },
+    "mssql://fabric/warehouse/gold/customer_revenue_mart": {
+      "label": "customer_revenue_mart",
+      "type": "gold"
+    },
+    "mssql://fabric/warehouse/silver/invoices_clean": {
+      "label": "invoices_clean",
+      "type": "silver"
+    },
+    "mssql://fabric/warehouse/gold/public_marketing": {
+      "label": "public_marketing",
+      "type": "gold"
+    }
+  },
+  "edges": [
+    {
+      "from": "spark://silver.orders_valid::CustomerId",
+      "to": "spark://gold.fact_sales::CustomerId",
+      "transform": "spark:build_fact_sales:build_fact_sales:saveAsTable:gold.fact_sales"
+    },
+    {
+      "from": "spark://silver.orders_valid::Amount",
+      "to": "spark://gold.fact_sales::GrossAmount",
+      "transform": "spark:build_fact_sales:build_fact_sales:saveAsTable:gold.fact_sales"
+    },
+    {
+      "from": "spark://silver.orders_valid::Amount",
+      "to": "spark://gold.fact_sales::NetAmount",
+      "transform": "spark:build_fact_sales:build_fact_sales:saveAsTable:gold.fact_sales"
+    },
+    {
+      "from": "spark://silver.orders_valid::Discount",
+      "to": "spark://gold.fact_sales::NetAmount",
+      "transform": "spark:build_fact_sales:build_fact_sales:saveAsTable:gold.fact_sales"
+    },
+    {
+      "from": "spark://silver.orders_valid::Qty",
+      "to": "spark://gold.fact_sales::Units",
+      "transform": "spark:build_fact_sales:build_fact_sales:saveAsTable:gold.fact_sales"
+    },
+    {
+      "from": "spark://silver.orders_valid::Amount",
+      "to": "spark://gold.fact_sales::UnitPrice",
+      "transform": "spark:build_fact_sales:build_fact_sales:saveAsTable:gold.fact_sales"
+    },
+    {
+      "from": "spark://silver.orders_valid::Qty",
+      "to": "spark://gold.fact_sales::UnitPrice",
+      "transform": "spark:build_fact_sales:build_fact_sales:saveAsTable:gold.fact_sales"
+    },
+    {
+      "from": "spark://silver.orders_valid::Discount",
+      "to": "spark://gold.fact_sales::UnitPrice",
+      "transform": "spark:build_fact_sales:build_fact_sales:saveAsTable:gold.fact_sales"
+    },
+    {
+      "from": "spark://gold.fact_sales_secured::region",
+      "to": "spark://gold.agg_sales_region::Region",
+      "transform": "spark:build_fact_sales:build_region_rollup:sql:gold.agg_sales_region"
+    },
+    {
+      "from": "spark://gold.fact_sales_secured::netamount",
+      "to": "spark://gold.agg_sales_region::TotalNet",
+      "transform": "spark:build_fact_sales:build_region_rollup:sql:gold.agg_sales_region"
+    },
+    {
+      "from": "spark://gold.fact_sales_secured::units",
+      "to": "spark://gold.agg_sales_region::TotalUnits",
+      "transform": "spark:build_fact_sales:build_region_rollup:sql:gold.agg_sales_region"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/crm/customers::id",
+      "to": "mssql://fabric/warehouse/bronze/crm_customers::id",
+      "transform": "tsql:insert:crm_customers:customers"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/crm/customers::name",
+      "to": "mssql://fabric/warehouse/bronze/crm_customers::name",
+      "transform": "tsql:insert:crm_customers:customers"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/crm/customers::email",
+      "to": "mssql://fabric/warehouse/bronze/crm_customers::email",
+      "transform": "tsql:insert:crm_customers:customers"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/crm/customers::phone",
+      "to": "mssql://fabric/warehouse/bronze/crm_customers::phone",
+      "transform": "tsql:insert:crm_customers:customers"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/crm/customers::social_security_number",
+      "to": "mssql://fabric/warehouse/bronze/crm_customers::social_security_number",
+      "transform": "tsql:insert:crm_customers:customers"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/erp/invoices::invoice_id",
+      "to": "mssql://fabric/warehouse/bronze/erp_invoices::invoice_id",
+      "transform": "tsql:insert:erp_invoices:invoices"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/erp/invoices::customer_id",
+      "to": "mssql://fabric/warehouse/bronze/erp_invoices::customer_id",
+      "transform": "tsql:insert:erp_invoices:invoices"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/erp/invoices::amount",
+      "to": "mssql://fabric/warehouse/bronze/erp_invoices::amount",
+      "transform": "tsql:insert:erp_invoices:invoices"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/erp/invoices::card_last4",
+      "to": "mssql://fabric/warehouse/bronze/erp_invoices::card_last4",
+      "transform": "tsql:insert:erp_invoices:invoices"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/web/sessions::session_id",
+      "to": "mssql://fabric/warehouse/bronze/web_sessions::session_id",
+      "transform": "tsql:insert:web_sessions:sessions"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/web/sessions::customer_id",
+      "to": "mssql://fabric/warehouse/bronze/web_sessions::customer_id",
+      "transform": "tsql:insert:web_sessions:sessions"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/web/sessions::event_ts",
+      "to": "mssql://fabric/warehouse/bronze/web_sessions::event_ts",
+      "transform": "tsql:insert:web_sessions:sessions"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/web/sessions::page",
+      "to": "mssql://fabric/warehouse/bronze/web_sessions::page",
+      "transform": "tsql:insert:web_sessions:sessions"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/hr/compensation::employee_id",
+      "to": "mssql://fabric/warehouse/bronze/hr_compensation::employee_id",
+      "transform": "tsql:insert:hr_compensation:compensation"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/hr/compensation::base_salary",
+      "to": "mssql://fabric/warehouse/bronze/hr_compensation::base_salary",
+      "transform": "tsql:insert:hr_compensation:compensation"
+    },
+    {
+      "from": "mssql://fabric/warehouse/raw/hr/compensation::bonus",
+      "to": "mssql://fabric/warehouse/bronze/hr_compensation::bonus",
+      "transform": "tsql:insert:hr_compensation:compensation"
+    },
+    {
+      "from": "mssql://fabric/warehouse/silver/customer_360::customer_id",
+      "to": "mssql://fabric/warehouse/gold/customer_revenue_mart::customer_id",
+      "transform": "tsql:insert:customer_revenue_mart:customer_360"
+    },
+    {
+      "from": "mssql://fabric/warehouse/silver/customer_360::email",
+      "to": "mssql://fabric/warehouse/gold/customer_revenue_mart::email",
+      "transform": "tsql:insert:customer_revenue_mart:customer_360"
+    },
+    {
+      "from": "mssql://fabric/warehouse/silver/customer_360::amount",
+      "to": "mssql://fabric/warehouse/gold/customer_revenue_mart::total_revenue",
+      "transform": "tsql:insert:customer_revenue_mart:customer_360"
+    },
+    {
+      "from": "mssql://fabric/warehouse/silver/invoices_clean::customer_id",
+      "to": "mssql://fabric/warehouse/gold/customer_revenue_mart::customer_id",
+      "transform": "tsql:insert:customer_revenue_mart:invoices_clean"
+    },
+    {
+      "from": "mssql://fabric/warehouse/silver/invoices_clean::email",
+      "to": "mssql://fabric/warehouse/gold/customer_revenue_mart::email",
+      "transform": "tsql:insert:customer_revenue_mart:invoices_clean"
+    },
+    {
+      "from": "mssql://fabric/warehouse/silver/invoices_clean::amount",
+      "to": "mssql://fabric/warehouse/gold/customer_revenue_mart::total_revenue",
+      "transform": "tsql:insert:customer_revenue_mart:invoices_clean"
+    },
+    {
+      "from": "mssql://fabric/warehouse/gold/customer_revenue_mart::customer_id",
+      "to": "mssql://fabric/warehouse/gold/public_marketing::customer_id",
+      "transform": "tsql:view:public_marketing:customer_revenue_mart"
+    },
+    {
+      "from": "mssql://fabric/warehouse/gold/customer_revenue_mart::email",
+      "to": "mssql://fabric/warehouse/gold/public_marketing::email",
+      "transform": "tsql:view:public_marketing:customer_revenue_mart"
+    },
+    {
+      "from": "mssql://fabric/warehouse/gold/customer_revenue_mart::total_revenue",
+      "to": "mssql://fabric/warehouse/gold/public_marketing::total_revenue",
+      "transform": "tsql:view:public_marketing:customer_revenue_mart"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/crm_customers::id",
+      "to": "mssql://fabric/warehouse/silver/customer_360::customer_id",
+      "transform": "tsql:insert:customer_360:crm_customers"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/crm_customers::email",
+      "to": "mssql://fabric/warehouse/silver/customer_360::email",
+      "transform": "tsql:insert:customer_360:crm_customers"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/crm_customers::phone",
+      "to": "mssql://fabric/warehouse/silver/customer_360::phone",
+      "transform": "tsql:insert:customer_360:crm_customers"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/crm_customers::event_ts",
+      "to": "mssql://fabric/warehouse/silver/customer_360::last_session_ts",
+      "transform": "tsql:insert:customer_360:crm_customers"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/web_sessions::id",
+      "to": "mssql://fabric/warehouse/silver/customer_360::customer_id",
+      "transform": "tsql:insert:customer_360:web_sessions"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/web_sessions::email",
+      "to": "mssql://fabric/warehouse/silver/customer_360::email",
+      "transform": "tsql:insert:customer_360:web_sessions"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/web_sessions::phone",
+      "to": "mssql://fabric/warehouse/silver/customer_360::phone",
+      "transform": "tsql:insert:customer_360:web_sessions"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/web_sessions::event_ts",
+      "to": "mssql://fabric/warehouse/silver/customer_360::last_session_ts",
+      "transform": "tsql:insert:customer_360:web_sessions"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/erp_invoices::invoice_id",
+      "to": "mssql://fabric/warehouse/silver/invoices_clean::invoice_id",
+      "transform": "tsql:insert:invoices_clean:erp_invoices"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/erp_invoices::customer_id",
+      "to": "mssql://fabric/warehouse/silver/invoices_clean::customer_id",
+      "transform": "tsql:insert:invoices_clean:erp_invoices"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/erp_invoices::amount",
+      "to": "mssql://fabric/warehouse/silver/invoices_clean::amount",
+      "transform": "tsql:insert:invoices_clean:erp_invoices"
+    },
+    {
+      "from": "mssql://fabric/warehouse/bronze/erp_invoices::card_last4",
+      "to": "mssql://fabric/warehouse/silver/invoices_clean::card_last4",
+      "transform": "tsql:insert:invoices_clean:erp_invoices"
+    }
+  ]
+}

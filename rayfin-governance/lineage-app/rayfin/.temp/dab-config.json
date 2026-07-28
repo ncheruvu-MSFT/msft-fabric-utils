@@ -1,0 +1,303 @@
+{
+  "$schema": "https://github.com/Azure/data-api-builder/releases/download/v1.5.56/dab.draft.schema.json",
+  "entities": {
+    "LineageEdge": {
+      "source": "LineageEdges",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "update",
+              "policy": {
+                "database": "(@claims.role eq 'lineage-admin') or (@claims.sub eq @item.harvestedBySub)"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "(@claims.role eq 'lineage-admin') or (@claims.sub eq @item.harvestedBySub)"
+              }
+            },
+            "create",
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "sourceQname": {
+            "dbType": "NVARCHAR(400)",
+            "nullable": false
+          },
+          "sourceType": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "targetQname": {
+            "dbType": "NVARCHAR(400)",
+            "nullable": false
+          },
+          "targetType": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "processName": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "processType": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "artifactRef": {
+            "dbType": "NVARCHAR(400)",
+            "nullable": false
+          },
+          "harvestedBySub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "columnsJson": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          },
+          "extraJson": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          },
+          "harvestedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_LineageEdges",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "HarvestRun": {
+      "source": "HarvestRuns",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "update",
+              "policy": {
+                "database": "(@claims.role eq 'lineage-admin') or (@claims.sub eq @item.triggeredBySub)"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "(@claims.role eq 'lineage-admin') or (@claims.sub eq @item.triggeredBySub)"
+              }
+            },
+            "create",
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "harvesterType": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "status": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "edgeCount": {
+            "dbType": "INT",
+            "nullable": false
+          },
+          "triggeredBySub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "errorMessage": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          },
+          "startedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          },
+          "finishedAt": {
+            "dbType": "DATETIME2",
+            "nullable": true
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_HarvestRuns",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "Domain": {
+      "source": "Domains",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "create",
+              "policy": {
+                "database": "(@claims.role eq 'domain-admin') or (@claims.sub eq @item.ownerSub)"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "(@claims.role eq 'domain-admin') or (@claims.sub eq @item.ownerSub)"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "(@claims.role eq 'domain-admin') or (@claims.sub eq @item.ownerSub)"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "name": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "description": {
+            "dbType": "NVARCHAR(1000)",
+            "nullable": true
+          },
+          "parentId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "ownerSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "isActive": {
+            "dbType": "BIT",
+            "nullable": false
+          },
+          "auditCreatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          },
+          "auditUpdatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": true
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_Domains",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "DataAsset": {
+      "source": "DataAssets",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "create",
+              "policy": {
+                "database": "@claims.role eq 'lineage-admin'"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "@claims.role eq 'lineage-admin'"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "@claims.role eq 'lineage-admin'"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "qualifiedName": {
+            "dbType": "NVARCHAR(400)",
+            "nullable": false
+          },
+          "assetType": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "displayName": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "domainId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "purviewGuid": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "auditCreatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          },
+          "auditUpdatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": true
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_DataAssets",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

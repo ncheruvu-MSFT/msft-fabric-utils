@@ -1,0 +1,30 @@
+{
+  "comment": "Complex sample - validates label propagation across 3 systems, 3 layers, and a deliberate PII leak.",
+  "classifications": {
+    "mssql://unknown/unknown/raw.crm/customers":   ["MICROSOFT.PERSONAL.EMAIL", "MICROSOFT.PERSONAL.PHONE_NUMBER", "MICROSOFT.GOVERNMENT.US.SOCIAL_SECURITY_NUMBER"],
+    "mssql://unknown/unknown/raw.erp/invoices":    ["MICROSOFT.FINANCIAL.CREDIT_CARD_NUMBER"],
+    "mssql://unknown/unknown/raw.web/sessions":    [],
+    "mssql://unknown/unknown/raw.hr/compensation": ["HR_COMPENSATION"]
+  },
+  "seed_labels": {
+    "mssql://unknown/unknown/gold/public_marketing": "Public"
+  },
+  "expected_edges_tsql":     8,
+  "expected_edges_notebook": 1,
+  "expected_violations": [
+    {
+      "asset": "mssql://unknown/unknown/gold/public_marketing",
+      "rule":  "label_downgrade_blocked",
+      "reason": "Seed label Public is lower than propagated Confidential-PII"
+    }
+  ],
+  "expected_labels_minimums": {
+    "mssql://unknown/unknown/bronze/crm_customers":     "Confidential-PII",
+    "mssql://unknown/unknown/silver/customer_360":      "Confidential-PII",
+    "mssql://unknown/unknown/gold/customer_revenue_mart": "Confidential-PII",
+    "mssql://unknown/unknown/bronze/hr_compensation":   "Highly-Confidential-Restricted",
+    "lakehouse://silver.employee_engagement":           "Highly-Confidential-Restricted",
+    "mssql://unknown/unknown/bronze/erp_invoices":      "Highly-Confidential-Restricted",
+    "mssql://unknown/unknown/silver/invoices_clean":    "Highly-Confidential-Restricted"
+  }
+}

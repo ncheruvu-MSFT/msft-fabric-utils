@@ -1,0 +1,396 @@
+{
+  "$schema": "https://github.com/Azure/data-api-builder/releases/download/v1.5.56/dab.draft.schema.json",
+  "entities": {
+    "Tool": {
+      "source": "Tools",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "create",
+              "policy": {
+                "database": "@claims.role eq 'agent-admin'"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "@claims.role eq 'agent-admin'"
+              }
+            },
+            {
+              "action": "delete",
+              "policy": {
+                "database": "@claims.role eq 'agent-admin'"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "name": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "kind": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "endpoint": {
+            "dbType": "NVARCHAR(400)",
+            "nullable": false
+          },
+          "authMode": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "isSensitive": {
+            "dbType": "BIT",
+            "nullable": false
+          },
+          "allowedDomainsCsv": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_Tools",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "RunLog": {
+      "source": "RunLogs",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "delete",
+              "policy": {
+                "database": "@claims.role eq 'agent-admin'"
+              }
+            },
+            {
+              "action": "create",
+              "policy": {
+                "database": "(@claims.role eq 'agent-runtime') or (@claims.role eq 'agent-admin')"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "agentId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "promptTemplateId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "callerSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "status": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "inputTokens": {
+            "dbType": "INT",
+            "nullable": false
+          },
+          "outputTokens": {
+            "dbType": "INT",
+            "nullable": false
+          },
+          "toolCallsJson": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          },
+          "redactedInput": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          },
+          "redactedOutput": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          },
+          "startedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          },
+          "finishedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_RunLogs",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "RedTeamFinding": {
+      "source": "RedTeamFindings",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "delete",
+              "policy": {
+                "database": "@claims.role eq 'agent-admin'"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "(@claims.role eq 'agent-admin') or (@claims.sub eq @item.assigneeSub)"
+              }
+            },
+            {
+              "action": "create",
+              "policy": {
+                "database": "(@claims.role eq 'red-team') or (@claims.role eq 'agent-admin')"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "agentId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "severity": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "category": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "title": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "description": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": false
+          },
+          "status": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "reporterSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "assigneeSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": true
+          },
+          "mitigationNote": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": true
+          },
+          "reportedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          },
+          "resolvedAt": {
+            "dbType": "DATETIME2",
+            "nullable": true
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_RedTeamFindings",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "PromptTemplate": {
+      "source": "PromptTemplates",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "delete",
+              "policy": {
+                "database": "@claims.role eq 'agent-admin'"
+              }
+            },
+            {
+              "action": "create",
+              "policy": {
+                "database": "(@claims.role eq 'agent-author') or (@claims.sub eq @item.ownerSub)"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "(@claims.role eq 'agent-author') or (@claims.sub eq @item.ownerSub)"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "agentId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "name": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "version": {
+            "dbType": "INT",
+            "nullable": false
+          },
+          "body": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": false
+          },
+          "ownerSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "auditCreatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_PromptTemplates",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    },
+    "Agent": {
+      "source": "Agents",
+      "permissions": [
+        {
+          "role": "authenticated",
+          "actions": [
+            {
+              "action": "delete",
+              "policy": {
+                "database": "@claims.role eq 'agent-admin'"
+              }
+            },
+            {
+              "action": "create",
+              "policy": {
+                "database": "(@claims.role eq 'agent-author') or (@claims.sub eq @item.ownerSub)"
+              }
+            },
+            {
+              "action": "update",
+              "policy": {
+                "database": "(@claims.role eq 'agent-author') or (@claims.sub eq @item.ownerSub)"
+              }
+            },
+            "read"
+          ]
+        }
+      ],
+      "x-schema": {
+        "fields": {
+          "id": {
+            "dbType": "UNIQUEIDENTIFIER",
+            "nullable": false
+          },
+          "name": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "description": {
+            "dbType": "NVARCHAR(4000)",
+            "nullable": false
+          },
+          "domainId": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "ownerSub": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "status": {
+            "dbType": "NVARCHAR(100)",
+            "nullable": false
+          },
+          "modelDeployment": {
+            "dbType": "NVARCHAR(200)",
+            "nullable": false
+          },
+          "requiresHumanApproval": {
+            "dbType": "BIT",
+            "nullable": false
+          },
+          "auditCreatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": false
+          },
+          "auditUpdatedAt": {
+            "dbType": "DATETIME2",
+            "nullable": true
+          }
+        },
+        "constraints": {
+          "primaryKey": {
+            "name": "PK_Agents",
+            "columns": [
+              "id"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

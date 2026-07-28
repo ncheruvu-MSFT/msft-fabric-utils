@@ -1,0 +1,16 @@
+.git
+.gitignore
+.pytest_cache
+out/
+!out/cloud/edges.json
+!out/cloud/labels.json
+!out/cloud/column_labels.json
+!out/cloud/violations.json
+__pycache__
+*.pyc
+*.egg-info
+.env
+.env.cloud
+.venv
+node_modules
+.vscode
