@@ -19,9 +19,9 @@
 
 .PARAMETER CapacityFilter
   Which capacity SKUs to scan:
-    P   — Premium P-SKU only (P1, P2, P3, P4, P5)
-    F   — Fabric F-SKU only (F2, F4, F8, F16, F32, F64, F128, ...)
-    All — Both P-SKU and F-SKU (default)
+        P   - Premium P-SKU only (P1, P2, P3, P4, P5)
+        F   - Fabric F-SKU only (F2, F4, F8, F16, F32, F64, F128, ...)
+        All - Both P-SKU and F-SKU (default)
 
 .PARAMETER OutputCsv
   Path to write the results CSV. Default: .\semantic-model-sizes.csv
@@ -95,7 +95,7 @@ if (-not $filteredCaps) {
     Write-Host "No $label capacities found in this tenant." -ForegroundColor Yellow
     Write-Host ''
     Write-Host 'Available capacities in tenant:' -ForegroundColor DarkGray
-    $caps | ForEach-Object { Write-Host "    $($_.displayName) — SKU: $($_.sku) — State: $($_.state)" -ForegroundColor DarkGray }
+    $caps | ForEach-Object { Write-Host "    $($_.displayName) - SKU: $($_.sku) - State: $($_.state)" -ForegroundColor DarkGray }
     return
 }
 
@@ -104,10 +104,10 @@ $pausedCaps = @($filteredCaps | Where-Object { $_.state -ne 'Active' })
 Write-Host "    Found $($filteredCaps.Count) matching capacities:"
 $filteredCaps | ForEach-Object { 
     $stateColor = if ($_.state -eq 'Active') { 'Green' } else { 'Yellow' }
-    Write-Host "      $($_.displayName) — $($_.sku) — $($_.region) — $($_.state)" -ForegroundColor $stateColor
+    Write-Host "      $($_.displayName) - $($_.sku) - $($_.region) - $($_.state)" -ForegroundColor $stateColor
 }
 if ($pausedCaps.Count -gt 0) {
-    Write-Warn "$($pausedCaps.Count) capacity/capacities are not Active (paused/deallocated) — their workspaces will be skipped."
+    Write-Warn "$($pausedCaps.Count) capacity/capacities are not Active (paused/deallocated) - their workspaces will be skipped."
 }
 if ($targetCapIds.Count -eq 0) {
     Write-Host 'No ACTIVE capacities matching the filter. Start/resume a capacity and re-run.' -ForegroundColor Yellow
@@ -149,11 +149,11 @@ foreach ($ws in $pSkuWorkspaces) {
         $counter++
         $dsName = $ds.name
         $dsId   = $ds.id
-        Write-Progress -Activity 'Querying XMLA' -Status "$counter / $totalDatasets — $wsName / $dsName" -PercentComplete (($counter / [Math]::Max($totalDatasets,1)) * 100)
+        Write-Progress -Activity 'Querying XMLA' -Status "$counter / $totalDatasets - $wsName / $dsName" -PercentComplete (($counter / [Math]::Max($totalDatasets,1)) * 100)
 
         try {
             # XMLA connection via OAuth token in Password field (standard PBI XMLA auth)
-            $connStr = "Provider=MSOLAP;Data Source=$server;Initial Catalog=$dsName;Password=$token"
+            $connStr = "Provider=MSOLAP;Data Source=${server};Initial Catalog=$dsName;Password=$token"
 
             # Query column-level storage DMV
             $xmlaQuery = @"
