@@ -180,8 +180,10 @@ FROM `$SYSTEM.DISCOVER_STORAGE_TABLE_COLUMNS
 
             foreach ($row in $rows) {
                 $tableId   = $row.SelectSingleNode('r:TABLE_ID', $ns).'#text'
-                $dictSize  = [long]($row.SelectSingleNode('r:DICTIONARY_SIZE', $ns).'#text' ?? 0)
-                $encSize   = [long]($row.SelectSingleNode('r:COLUMN_ENCODING_SIZE', $ns).'#text' ?? 0)
+                $dictNode  = $row.SelectSingleNode('r:DICTIONARY_SIZE', $ns)
+                $encNode   = $row.SelectSingleNode('r:COLUMN_ENCODING_SIZE', $ns)
+                $dictSize  = if ($null -ne $dictNode -and $dictNode.InnerText) { [long]$dictNode.InnerText } else { [long]0 }
+                $encSize   = if ($null -ne $encNode -and $encNode.InnerText) { [long]$encNode.InnerText } else { [long]0 }
                 $colBytes  = $dictSize + $encSize
                 $grandTotal += $colBytes
 
