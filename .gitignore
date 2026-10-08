@@ -70,3 +70,9 @@ fabric-sdlc-governance/*.log
 fabric-cicd/.bulk.log
 fabric-cicd/*.log
 
+
+# Local generated env files (do not commit real values)
+.env.cloud
+*.env.cloud
+.env.*
+!.env.example
