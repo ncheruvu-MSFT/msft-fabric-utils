@@ -28,7 +28,7 @@ WORKFLOWS = [
         "triggers":[{"type":"when_data_access_grant_request"}],
         "actions":[
             {"type":"approval","name":"Steward review",
-             "approvers":[{"objectId":"admin@MngEnvMCAP219373.onmicrosoft.com"}],
+             "approvers":[{"objectId":"admin@contoso.onmicrosoft.com"}],
              "approvalType":"any","reminderEnabled":True,"reminderTimeInHours":24},
             {"type":"grant_access","onApprove":True}
         ]
@@ -39,7 +39,7 @@ WORKFLOWS = [
         "triggers":[{"type":"when_term_create_or_update"}],
         "actions":[
             {"type":"approval","name":"Term review",
-             "approvers":[{"objectId":"admin@MngEnvMCAP219373.onmicrosoft.com"}],
+             "approvers":[{"objectId":"admin@contoso.onmicrosoft.com"}],
              "approvalType":"any"},
             {"type":"publish_term","onApprove":True}
         ]
@@ -50,7 +50,7 @@ WORKFLOWS = [
         "triggers":[{"type":"when_data_product_publish_request"}],
         "actions":[
             {"type":"approval","name":"Domain owner approval",
-             "approvers":[{"objectId":"admin@MngEnvMCAP219373.onmicrosoft.com"}],
+             "approvers":[{"objectId":"admin@contoso.onmicrosoft.com"}],
              "approvalType":"any"},
             {"type":"publish_data_product","onApprove":True}
         ]

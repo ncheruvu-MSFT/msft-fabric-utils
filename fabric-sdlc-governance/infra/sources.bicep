@@ -27,7 +27,7 @@ param location string = resourceGroup().location
 param instance string = '001'
 
 @description('Entra UPN granted SQL/Postgres admin (Entra-only auth)')
-param adminLogin string = 'ncheruvu@MngEnvMCAP219373.onmicrosoft.com'
+param adminLogin string = 'admin@contoso.onmicrosoft.com'
 
 @description('Entra object ID for SQL/Postgres admin')
 param adminObjectId string = 'e5fde933-199e-4b54-917a-8e6741be6941'
