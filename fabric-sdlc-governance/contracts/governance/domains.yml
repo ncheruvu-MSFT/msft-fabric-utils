@@ -41,7 +41,7 @@ environments:
 # Default owners (Entra UPNs / group object IDs) inherited by every domain
 # unless the domain block sets its own `owners:`.
 default_owners:
-  - admin@MngEnvMCAP219373.onmicrosoft.com
+  - admin@contoso.onmicrosoft.com
 
 # -----------------------------------------------------------------------------
 # Top-level domains and their subdomains.  `subdomains` is recursive, so you

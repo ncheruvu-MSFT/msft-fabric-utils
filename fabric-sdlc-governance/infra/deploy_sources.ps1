@@ -46,7 +46,7 @@ SOURCE_PG_DB=$($out.postgresDatabase.value)
 SOURCE_COSMOS_EP=$($out.cosmosEndpoint.value)
 SOURCE_COSMOS_ACCT=$($out.cosmosName.value)
 SOURCE_COSMOS_DB=$($out.cosmosDatabase.value)
-SOURCE_ADMIN_LOGIN=ncheruvu@MngEnvMCAP219373.onmicrosoft.com
+SOURCE_ADMIN_LOGIN=admin@contoso.onmicrosoft.com
 SOURCE_PG_LOGIN=pgadmin
 SOURCE_PG_PASSWORD=$pgPwd
 "@ | Out-File -FilePath $envFile -Encoding utf8

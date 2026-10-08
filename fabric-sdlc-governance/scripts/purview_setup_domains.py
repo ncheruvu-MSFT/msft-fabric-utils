@@ -26,13 +26,13 @@ def H(): return {"Authorization":f"Bearer {tok()}","Content-Type":"application/j
 
 DOMAINS = [
     {"name":"Contoso Retail",     "description":"Customer-facing retail commerce: customers, orders, products",
-     "ownerEmails":["admin@MngEnvMCAP219373.onmicrosoft.com"]},
+     "ownerEmails":["admin@contoso.onmicrosoft.com"]},
     {"name":"Contoso HR",         "description":"Workforce + compensation (high-sensitivity)",
-     "ownerEmails":["admin@MngEnvMCAP219373.onmicrosoft.com"]},
+     "ownerEmails":["admin@contoso.onmicrosoft.com"]},
     {"name":"Contoso Telemetry",  "description":"Behavioural / clickstream / IoT events",
-     "ownerEmails":["admin@MngEnvMCAP219373.onmicrosoft.com"]},
+     "ownerEmails":["admin@contoso.onmicrosoft.com"]},
     {"name":"Contoso Finance",    "description":"Revenue, GL, treasury (restricted)",
-     "ownerEmails":["admin@MngEnvMCAP219373.onmicrosoft.com"]},
+     "ownerEmails":["admin@contoso.onmicrosoft.com"]},
 ]
 
 def upsert_domain(d):
