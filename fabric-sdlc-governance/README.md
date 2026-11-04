@@ -14,6 +14,7 @@ End-to-end demo for **Microsoft Fabric CI/CD with Azure DevOps + GitHub + Micros
 | 3 | **Purview REST scripts** | [`scripts/purview_fabric_governance.py`](scripts/purview_fabric_governance.py) | Create governance domains, register Fabric data source, trigger scan — all via REST API |
 | 4 | **ADO pipeline templates** | [`ado-pipelines/`](ado-pipelines/) | YAML templates per team using the Fabric DevOps extension + `fabric-cicd` Python package |
 | 5 | **GitHub Actions mirror** | [`.github-workflows/`](.github-workflows/) | Same SDLC expressed as GitHub Actions for cross-runner demo (rename to `.github/workflows/` to enable) |
+| 6 | **Purview DG tenant setup guide** | [`docs/purview-data-governance-tenant-setup.md`](docs/purview-data-governance-tenant-setup.md) | Step-by-step checklist (from Microsoft Learn) for bootstrapping Purview Unified Catalog — roles, governance domains, data products, glossary terms, OKRs — in a new tenant |
 
 ## 🎯 The 3-team topology demoed here
 
